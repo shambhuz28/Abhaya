@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-export/
 dist/
 web-build/
 expo-env.d.ts
@@ -31,6 +32,8 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.local
 .env*.local
 .env
 
@@ -38,6 +41,8 @@ yarn-error.*
 backend/node_modules/
 backend/.env
 backend/config/serviceAccountKey.json
+backend/*.log
+backend/logs/
 
 # typescript
 *.tsbuildinfo
@@ -45,3 +50,7 @@ backend/config/serviceAccountKey.json
 # generated native folders
 /ios
 /android
+
+.env
+backend/.env
+*.env

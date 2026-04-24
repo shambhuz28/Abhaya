@@ -23,8 +23,13 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
-  const renderItem = (icon, iconColor, title, subtitle, rightElement) => (
-    <TouchableOpacity style={styles.item} activeOpacity={0.7} disabled={!!rightElement}>
+  const renderItem = (icon, iconColor, title, subtitle, rightElement, onPress) => (
+    <TouchableOpacity
+      style={styles.item}
+      activeOpacity={0.7}
+      disabled={!!rightElement && !onPress}
+      onPress={onPress}
+    >
       <View style={[styles.iconWrap, { backgroundColor: iconColor + '15' }]}>
         <Ionicons name={icon} size={18} color={iconColor} />
       </View>
@@ -56,6 +61,15 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.card}>
           {renderItem('person-outline', '#8c63db', 'Profile Information')}
           <View style={styles.divider} />
+          {renderItem(
+            'time-outline',
+            '#8c63db',
+            'Journey History',
+            'Recent routes and safety logs',
+            null,
+            () => navigation.navigate('JourneyHistory')
+          )}
+          <View style={styles.divider} />
           {renderItem('people-outline', '#8c63db', 'Emergency Contacts')}
           <View style={styles.divider} />
           {renderItem('lock-closed-outline', '#8c63db', 'Safety Password')}
@@ -81,6 +95,18 @@ export default function SettingsScreen({ navigation }) {
           {renderItem('mic-outline', '#8c63db', 'Audio Monitoring', null, (
             <Switch value={true} trackColor={{ true: '#8c63db', false: '#e0e0e0' }} />
           ))}
+        </View>
+
+        <Text style={styles.sectionHeading}>Vehicle Safety</Text>
+        <View style={styles.card}>
+          {renderItem(
+            'camera-outline',
+            '#8c63db',
+            'No Plate Vehicle Scan',
+            'Scan, upload, and save to Firebase',
+            null,
+            () => navigation.navigate('VehicleScan')
+          )}
         </View>
 
         <Text style={styles.sectionHeading}>About</Text>

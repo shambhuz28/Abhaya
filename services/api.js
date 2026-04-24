@@ -1,91 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeModules, Platform } from 'react-native';
-
-// ⚠️ Replace this IP with YOUR computer's local IP (run: hostname -I)
-// This ensures physical devices on the same WiFi can reach the backend.
-const LOCAL_IP = '10.14.3.122';
-
-const extractHostFromScriptUrl = (scriptURL) => {
-  if (!scriptURL || typeof scriptURL !== 'string') return null;
-  // Examples:
-  // - http://192.168.1.10:8081/index.bundle?...
-  // - exp://192.168.1.10:19000
-  const match = scriptURL.match(/^(?:https?|exp):\/\/([^:/]+)(?::\d+)?\//i);
-  return match?.[1] || null;
-};
-
-const isPrivateHost = (host) => {
-  if (!host) return false;
-  const h = host.toLowerCase();
-  if (h === 'localhost' || h === '127.0.0.1' || h === '::1') return true;
-
-  // IPv4 private ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-  const parts = h.split('.').map((x) => Number(x));
-  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return false;
-  const [a, b] = parts;
-  if (a === 10) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 127) return true;
-  return false;
-};
-
-const getHostFromHttpUrl = (urlString) => {
-  try {
-    const url = new URL(urlString);
-    return url.hostname || null;
-  } catch {
-    return null;
-  }
-};
-
-const getBaseUrl = () => {
-  const envUrl = String(
-    process.env.EXPO_PUBLIC_API_URL ||
-      process.env.EXPO_PUBLIC_BACKEND_API_URL ||
-      process.env.BACKEND_API_URL ||
-      ''
-  ).trim();
-  if (envUrl) {
-    const base = envUrl.replace(/\/+$/, '');
-    const host = getHostFromHttpUrl(base);
-    // 0.0.0.0 is a server bind address, not a reachable client address.
-    if (host === '0.0.0.0') {
-      // eslint-disable-next-line no-console
-      console.warn('[api] Ignoring EXPO_PUBLIC_BACKEND_API_URL=0.0.0.0 (unreachable). Use your PC LAN IP instead.');
-    } else {
-      return base.endsWith('/api') ? base : `${base}/api`;
-    }
-  }
-
-  // Web browser can use localhost directly
-  if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api';
-  }
-  // Mobile (physical device or emulator) — use LAN IP
-  // In Expo/RN dev mode this contains the Metro URL, e.g. http://192.168.x.x:8081/...
-  const scriptURL = NativeModules?.SourceCode?.scriptURL;
-  const devHost = extractHostFromScriptUrl(scriptURL);
-  if (devHost && isPrivateHost(devHost)) {
-    return `http://${devHost}:5000/api`;
-  }
-
-  // Android emulator host loopback (fallback)
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5000/api';
-  }
-
-  return `http://${LOCAL_IP}:5000/api`;
-};
-
-const BASE_URL = getBaseUrl();
+import { BASE_URL, backendUnavailableMessage } from './backendConfig';
 
 if (__DEV__) {
-  const scriptURL = NativeModules?.SourceCode?.scriptURL;
   // eslint-disable-next-line no-console
   console.log('[api] BASE_URL =', BASE_URL);
-  // eslint-disable-next-line no-console
-  console.log('[api] scriptURL =', scriptURL);
 }
 
 // Storage keys
@@ -107,7 +25,7 @@ const apiRequest = async (endpoint, options = {}) => {
   if (options.authenticated !== false) {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
   }
 
@@ -126,7 +44,9 @@ const apiRequest = async (endpoint, options = {}) => {
       if (refreshed) {
         // Retry the original request with new token
         const newToken = await AsyncStorage.getItem(TOKEN_KEY);
-        headers['Authorization'] = `Bearer ${newToken}`;
+        if (newToken) {
+          headers.Authorization = `Bearer ${newToken}`;
+        }
         const retryResponse = await fetch(url, {
           ...options,
           headers,
@@ -138,10 +58,11 @@ const apiRequest = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error.message);
+    // eslint-disable-next-line no-console
+    console.error(`API Error [${endpoint}] (${url}):`, error?.message || error);
     return {
       success: false,
-      error: `Network error. Cannot reach backend at ${BASE_URL}. If you are using Expo Tunnel, set EXPO_PUBLIC_BACKEND_API_URL in .env to http://<your-pc-ip>:5000 and restart with \"expo start -c\".`,
+      error: backendUnavailableMessage,
     };
   }
 };
@@ -153,11 +74,14 @@ const storeAuthData = async (data) => {
   await AsyncStorage.multiSet([
     [TOKEN_KEY, data.idToken],
     [REFRESH_KEY, data.refreshToken],
-    [USER_KEY, JSON.stringify({
-      uid: data.uid,
-      email: data.email,
-      displayName: data.displayName,
-    })],
+    [
+      USER_KEY,
+      JSON.stringify({
+        uid: data.uid,
+        email: data.email,
+        displayName: data.displayName,
+      }),
+    ],
   ]);
 };
 
@@ -204,8 +128,6 @@ const refreshToken = async () => {
     return false;
   }
 };
-
-// ─── Auth API Methods ────────────────────────────────────────
 
 const authAPI = {
   /**
@@ -307,7 +229,7 @@ const authAPI = {
 
 export default authAPI;
 
-// â”€â”€â”€ Incident / Evidence (mocked) â”€â”€â”€
+// Incident / Evidence (Cloudinary upload + optional backend incident routes)
 
 const getCloudinaryUploadConfig = () => {
   const uploadUrl =
@@ -415,3 +337,4 @@ export const incidentAPI = {
     }
   },
 };
+

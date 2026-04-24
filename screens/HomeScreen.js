@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   ScrollView,
@@ -11,15 +12,45 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import notificationsAPI from '../services/notifications';
 
 const { width } = Dimensions.get('window');
 
 const actionCards = [
-  { key: 'scan', icon: 'camera-outline', title: 'Scan', subtitle: 'Number Plate' },
-  { key: 'journey', icon: 'map-outline', title: 'Track', subtitle: 'Journey' },
-  { key: 'contacts', icon: 'people-outline', title: 'Emergency', subtitle: 'Contacts' },
-  { key: 'reports', icon: 'document-text-outline', title: 'Reports', subtitle: '& Evidence' },
+  {
+    key: 'scan',
+    icon: 'camera-outline',
+    title: 'Vehicle Scan',
+    subtitle: 'Capture vehicle details quickly',
+    tint: '#7b57d1',
+    background: '#f3edff',
+  },
+  {
+    key: 'journey',
+    icon: 'map-outline',
+    title: 'Journey Track',
+    subtitle: 'Start and monitor a safe route',
+    tint: '#0f9d7a',
+    background: '#e9fbf4',
+  },
+  {
+    key: 'contacts',
+    icon: 'people-outline',
+    title: 'Emergency Help',
+    subtitle: 'Reach trusted contacts faster',
+    tint: '#ea580c',
+    background: '#fff1e8',
+  },
+  {
+    key: 'reports',
+    icon: 'document-text-outline',
+    title: 'Reports',
+    subtitle: 'Save incidents and evidence',
+    tint: '#2563eb',
+    background: '#ebf3ff',
+  },
 ];
 
 const navItems = [
@@ -30,10 +61,57 @@ const navItems = [
   { key: 'Settings', icon: 'settings-outline', label: 'Settings' },
 ];
 
+const formatActivityTime = (value) => {
+  if (!value) return 'Recent';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Recent';
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(1, Math.round(diffMs / 60000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min ago`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hr ago`;
+  }
+
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+  }).format(date);
+};
+
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const displayName = user?.displayName || user?.name || 'Priya';
   const avatarLetter = displayName.trim().charAt(0).toUpperCase() || 'P';
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  const loadRecentActivity = useCallback(async () => {
+    setActivityLoading(true);
+
+    try {
+      const data = await notificationsAPI.list();
+      setRecentActivity((data || []).slice(0, 3));
+    } catch {
+      setRecentActivity([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentActivity();
+    }, [loadRecentActivity])
+  );
 
   const handleSosPress = () => {
     Alert.alert('SOS Activated', 'Emergency detected. Recording started.', [
@@ -49,8 +127,18 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleActionPress = (key) => {
+    if (key === 'scan') {
+      navigation.navigate('VehicleScan');
+      return;
+    }
+
     if (key === 'contacts') {
       navigation.navigate('EmergencyContacts');
+      return;
+    }
+
+    if (key === 'journey') {
+      navigation.navigate('Journey');
       return;
     }
 
@@ -72,6 +160,11 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
+    if (key === 'Journey') {
+      navigation.navigate('Journey');
+      return;
+    }
+
     Alert.alert('Coming Soon', 'This section is not wired yet.');
   };
 
@@ -79,25 +172,30 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#f7f3ff" />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>Hi {displayName.split(' ')[0]} 👋</Text>
-            <Text style={styles.subGreeting}>Stay Safe Today</Text>
+            <Text style={styles.greeting}>Hi {displayName.split(' ')[0]}</Text>
+            <Text style={styles.subGreeting}>Everything important is one tap away</Text>
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.bellButton} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Notifications')}
+            >
               <Ionicons name="notifications-outline" size={22} color="#1f1f1f" />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
 
-            <View style={styles.avatar}>
+            <TouchableOpacity
+              style={styles.avatar}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Settings')}
+            >
               <Text style={styles.avatarText}>{avatarLetter}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -108,8 +206,23 @@ export default function HomeScreen({ navigation }) {
           </View>
           <View style={styles.metaItem}>
             <Ionicons name="cloud-outline" size={14} color="#7b57d1" />
-            <Text style={styles.metaText}>23°C</Text>
+            <Text style={styles.metaText}>23 C</Text>
           </View>
+        </View>
+
+        <View style={styles.quickStatusRow}>
+          <View style={styles.quickStatusCard}>
+            <Text style={styles.quickStatusLabel}>Quick access</Text>
+            <Text style={styles.quickStatusValue}>4 actions ready</Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.88}
+            style={styles.historyShortcut}
+            onPress={() => navigation.navigate('JourneyHistory')}
+          >
+            <Ionicons name="time-outline" size={18} color="#7b57d1" />
+            <Text style={styles.historyShortcutText}>Journey history</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.safetyCard}>
@@ -157,8 +270,18 @@ export default function HomeScreen({ navigation }) {
               style={styles.actionCard}
               onPress={() => handleActionPress(card.key)}
             >
-              <View style={styles.actionIconWrap}>
-                <Ionicons name={card.icon} size={24} color="#7b57d1" />
+              <View style={styles.actionCardTop}>
+                <View
+                  style={[
+                    styles.actionIconWrap,
+                    { backgroundColor: card.background },
+                  ]}
+                >
+                  <Ionicons name={card.icon} size={24} color={card.tint} />
+                </View>
+                <View style={styles.actionArrow}>
+                  <Ionicons name="arrow-forward" size={16} color="#9f96b5" />
+                </View>
               </View>
               <Text style={styles.actionTitle}>{card.title}</Text>
               <Text style={styles.actionSubtitle}>{card.subtitle}</Text>
@@ -182,11 +305,42 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.activityCard}>
           <View style={styles.activityHeader}>
             <Text style={styles.activityTitle}>Recent Activity</Text>
-            <Ionicons name="time-outline" size={16} color="#9d9d9d" />
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Ionicons name="chevron-forward" size={18} color="#9d9d9d" />
+            </TouchableOpacity>
           </View>
-          <Text style={styles.activityText}>
-            No recent journeys today. Start tracking to see activity.
-          </Text>
+
+          {activityLoading ? (
+            <View style={styles.activityLoadingRow}>
+              <ActivityIndicator size="small" color="#7b57d1" />
+              <Text style={styles.activityLoadingText}>Loading recent updates...</Text>
+            </View>
+          ) : null}
+
+          {!activityLoading && recentActivity.length === 0 ? (
+            <Text style={styles.activityText}>
+              No recent activity yet. Start a journey or scan a vehicle to see updates here.
+            </Text>
+          ) : null}
+
+          {!activityLoading &&
+            recentActivity.map((item) => (
+              <View key={item.id} style={styles.activityRow}>
+                <View style={[styles.activityIconWrap, { backgroundColor: item.background }]}>
+                  <Ionicons name={item.icon} size={18} color={item.tint} />
+                </View>
+                <View style={styles.activityCopy}>
+                  <View style={styles.activityTopRow}>
+                    <Text style={styles.activityItemTitle}>{item.title}</Text>
+                    <Text style={styles.activityTime}>{formatActivityTime(item.createdAt)}</Text>
+                  </View>
+                  <Text style={styles.activityItemText}>{item.message}</Text>
+                </View>
+              </View>
+            ))}
         </View>
       </ScrollView>
 
@@ -246,16 +400,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  bellButton: {
-    width: 32,
-    height: 32,
+  headerIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#14092c',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3,
   },
   notificationDot: {
     position: 'absolute',
-    top: 6,
-    right: 5,
+    top: 10,
+    right: 10,
     width: 6,
     height: 6,
     borderRadius: 3,
@@ -294,6 +455,48 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#515463',
     fontWeight: '500',
+  },
+  quickStatusRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickStatusCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    shadowColor: '#14092c',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  quickStatusLabel: {
+    color: '#8f8f96',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quickStatusValue: {
+    marginTop: 6,
+    color: '#1f1533',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  historyShortcut: {
+    width: 140,
+    borderRadius: 18,
+    backgroundColor: '#f3edff',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    justifyContent: 'center',
+  },
+  historyShortcutText: {
+    marginTop: 8,
+    color: '#6e44cf',
+    fontSize: 13,
+    fontWeight: '800',
   },
   safetyCard: {
     marginTop: 26,
@@ -405,7 +608,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: (width - 62) / 2,
-    minHeight: 110,
+    minHeight: 144,
     backgroundColor: '#fff',
     borderRadius: 24,
     paddingHorizontal: 18,
@@ -416,25 +619,38 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 4,
   },
+  actionCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   actionIconWrap: {
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#f1e9ff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+  },
+  actionArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#f8f6fc',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#26242d',
   },
   actionSubtitle: {
     marginTop: 6,
     fontSize: 12,
-    color: '#9997a3',
-    fontWeight: '500',
+    color: '#7f7b8d',
+    fontWeight: '600',
+    lineHeight: 18,
   },
   sosWrap: {
     alignSelf: 'center',
@@ -492,6 +708,58 @@ const styles = StyleSheet.create({
     color: '#9a97a2',
     fontSize: 13,
     lineHeight: 18,
+  },
+  activityLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+  },
+  activityLoadingText: {
+    color: '#8f8f96',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  activityRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#f1edf8',
+  },
+  activityIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityCopy: {
+    flex: 1,
+  },
+  activityTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  activityItemTitle: {
+    flex: 1,
+    color: '#2c2538',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  activityTime: {
+    color: '#9a97a2',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  activityItemText: {
+    marginTop: 5,
+    color: '#7a7686',
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   bottomNav: {
     position: 'absolute',

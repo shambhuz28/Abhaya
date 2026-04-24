@@ -24,14 +24,14 @@ try {
       credential: admin.credential.cert(serviceAccount),
     });
     adminInitialized = true;
-    console.log('✅ Firebase Admin SDK initialized (full mode)');
+    console.log('Firebase Admin SDK initialized (full mode)');
   } else {
-    console.log('⚠️  No service account key found — running in REST-only mode');
-    console.log('   Auth will work via Firebase REST API (API key).');
-    console.log('   To enable Admin SDK, add: backend/config/serviceAccountKey.json');
+    console.log('No service account key found — running in REST-only mode');
+    console.log('Auth will work via Firebase REST API (API key).');
+    console.log('To enable Admin SDK, add: backend/config/serviceAccountKey.json');
   }
 } catch (error) {
-  console.error('⚠️  Firebase Admin init error:', error.message);
+  console.error('Firebase Admin init error:', error.message);
   console.log('   Continuing in REST-only mode...');
 }
 

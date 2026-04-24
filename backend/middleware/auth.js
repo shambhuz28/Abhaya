@@ -1,13 +1,15 @@
 const { admin, adminInitialized } = require('../config/firebase');
+const logger = require('../utils/logger');
 
-/**
- * Middleware to verify user authentication.
- * Uses Firebase Admin SDK if available, otherwise verifies via REST API.
- */
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('Protected route rejected due to missing token', {
+      path: req.originalUrl || req.path,
+      method: req.method,
+    });
+
     return res.status(401).json({
       success: false,
       error: 'No token provided. Send Authorization: Bearer <token>',
@@ -18,7 +20,6 @@ const verifyToken = async (req, res, next) => {
 
   try {
     if (adminInitialized) {
-      // Use Admin SDK for fast, local token verification
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       req.user = {
         uid: decodedToken.uid,
@@ -26,9 +27,9 @@ const verifyToken = async (req, res, next) => {
         displayName: decodedToken.name || '',
       };
     } else {
+      const apiKey = process.env.FIREBASE_API_KEY;
       // Fallback: verify token via Firebase REST API (lookup user by idToken)
-      const API_KEY = process.env.FIREBASE_API_KEY;
-      if (!API_KEY) {
+      if (!apiKey) {
         return res.status(500).json({
           success: false,
           error:
@@ -36,7 +37,7 @@ const verifyToken = async (req, res, next) => {
         });
       }
       const response = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`,
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,9 +63,23 @@ const verifyToken = async (req, res, next) => {
       };
     }
 
+    logger.info('Token verified', {
+      path: req.originalUrl || req.path,
+      method: req.method,
+      uid: req.user.uid,
+      email: logger.maskEmail(req.user.email),
+      adminMode: adminInitialized,
+    });
+
     next();
   } catch (error) {
-    console.error('Token verification failed:', error.message);
+    logger.warn('Token verification failed', {
+      path: req.originalUrl || req.path,
+      method: req.method,
+      error: error.message,
+      adminMode: adminInitialized,
+    });
+
     return res.status(401).json({
       success: false,
       error: 'Invalid or expired token.',

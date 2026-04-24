@@ -20,7 +20,9 @@ import { saveIncidentReport } from '../services/reportStorage';
 
 const getEmailEndpoint = () => {
   const rawBase = String(
-    process.env.EXPO_PUBLIC_BACKEND_API_URL ||
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+      process.env.EXPO_PUBLIC_BACKEND_API_URL ||
+      process.env.EXPO_PUBLIC_BACKEND_URL ||
       process.env.EXPO_PUBLIC_API_URL ||
       ''
   )
@@ -38,7 +40,8 @@ const sendEmergencyEmailViaBackend = async (report) => {
   if (!url) {
     return {
       success: false,
-      error: 'Backend URL is not configured. Set EXPO_PUBLIC_BACKEND_API_URL in root .env.',
+      error:
+        'Backend URL is not configured. Set EXPO_PUBLIC_API_BASE_URL (or EXPO_PUBLIC_BACKEND_API_URL) in root .env.',
     };
   }
 

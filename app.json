@@ -15,8 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "ABHAYA needs camera access to record emergency evidence.",
-        "NSMicrophoneUsageDescription": "ABHAYA needs microphone access to record emergency evidence with audio."
+        "NSLocationWhenInUseUsageDescription": "Abhaya uses your location to plan safe journeys and detect route deviations.",
+        "NSCameraUsageDescription": "Abhaya uses the camera to record emergency evidence and to scan suspicious vehicles.",
+        "NSMicrophoneUsageDescription": "Abhaya needs microphone access to record emergency evidence with audio.",
+        "NSPhotoLibraryUsageDescription": "Abhaya uses your photo library so you can upload vehicle images and save them as evidence."
       }
     },
     "android": {
@@ -24,12 +26,32 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "edgeToEdgeEnabled": true,
       "usesCleartextTraffic": true,
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Abhaya uses your location to plan safe journeys and detect route deviations."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Abhaya uses your photo library so you can upload vehicle images and save them as evidence.",
+          "cameraPermission": "Abhaya uses the camera to scan and save suspicious vehicles without visible number plates."
+        }
+      ]
+    ]
   }
 }
