@@ -81,11 +81,7 @@ export default function ReportDetailsScreen({ navigation, route }) {
   }, [report, passedIncidentId, loadReport]);
 
   const openVideo = () => {
-    const hasVideos = Array.isArray(report?.evidence)
-      ? report.evidence.some((item) => item?.type === 'video' && item?.url)
-      : false;
-    if (!hasVideos) return;
-    navigation.navigate('VideoEvidence', { incidentId });
+    navigation.navigate('VideoEvidence', { incidentId, showAll: true });
   };
 
   const headerSubtitle = useMemo(() => {
@@ -254,10 +250,8 @@ export default function ReportDetailsScreen({ navigation, route }) {
               <TouchableOpacity
                 onPress={openVideo}
                 activeOpacity={0.85}
-                disabled={videoEvidenceCount === 0}
                 style={[
                   styles.viewButton,
-                  videoEvidenceCount === 0 && styles.viewButtonDisabled,
                 ]}
               >
                 <Text style={styles.viewButtonText}>View Video Evidence</Text>

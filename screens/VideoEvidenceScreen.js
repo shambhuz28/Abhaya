@@ -54,24 +54,27 @@ export default function VideoEvidenceScreen({ navigation, route }) {
           reports.push(latestReport);
         }
 
-        const videoItems = reports
-          .flatMap((report) => {
-            const evidence = Array.isArray(report?.evidence) ? report.evidence : [];
-            const reportIncidentId = String(report?.incidentId || '').trim() || 'unknown';
-            return evidence
-              .filter((item) => item?.type === 'video' && item?.url)
-              .map((item, index) => {
-                const uploadedAt = item.timestamp || report.createdAt || new Date().toISOString();
-                return {
-                  id: `${reportIncidentId}-${index}-${uploadedAt}`,
-                  url: item.url,
-                  incidentId: reportIncidentId,
-                  label: item.label || `Video Evidence #${index + 1}`,
-                  uploadedAt,
-                };
-              });
-          })
-          .sort((a, b) => String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
+        const unsorted = reports.reduce((acc, report) => {
+          const evidence = Array.isArray(report?.evidence) ? report.evidence : [];
+          const reportIncidentId = String(report?.incidentId || '').trim() || 'unknown';
+
+          const next = evidence
+            .filter((item) => item?.type === 'video' && item?.url)
+            .map((item, index) => {
+              const uploadedAt = item.timestamp || report.createdAt || new Date().toISOString();
+              return {
+                id: `${reportIncidentId}-${index}-${uploadedAt}`,
+                url: item.url,
+                incidentId: reportIncidentId,
+                label: item.label || `Video Evidence #${index + 1}`,
+                uploadedAt,
+              };
+            });
+
+          return acc.concat(next);
+        }, []);
+
+        const videoItems = unsorted.sort((a, b) => String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
 
         if (!videoItems.length) {
           setError('No saved videos yet. Trigger SOS to record evidence.');

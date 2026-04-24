@@ -347,7 +347,7 @@ export default function IncidentReportScreen({ navigation, route }) {
             <TouchableOpacity
               style={styles.evidenceFile}
               activeOpacity={0.85}
-              onPress={() => navigation.navigate('VideoEvidence', { incidentId })}
+              onPress={() => navigation.navigate('VideoEvidence', { incidentId, showAll: true })}
             >
               <View style={styles.evidenceIconWrap}>
                 <Ionicons name="eye" size={14} color="#7b57d1" />
