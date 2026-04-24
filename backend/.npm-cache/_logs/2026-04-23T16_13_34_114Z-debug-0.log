@@ -1,0 +1,443 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.11.0
+2 info using node@v24.14.1
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\ADMIN\Desktop\Abhaya\backend\.npmrc
+5 silly config load:file:C:\Users\ADMIN\.npmrc
+6 silly config load:file:C:\Users\ADMIN\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm install
+8 verbose argv "install" "--cache" ".\\.npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\ADMIN\Desktop\Abhaya\backend\.npm-cache\_logs\2026-04-23T16_13_34_114Z-
+10 verbose logfile C:\Users\ADMIN\Desktop\Abhaya\backend\.npm-cache\_logs\2026-04-23T16_13_34_114Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly idealTree buildDeps
+14 silly fetch manifest twilio@^5.5.0
+15 silly packumentCache full:https://registry.npmjs.org/twilio cache-miss
+16 http fetch GET 200 https://registry.npmjs.org/twilio 474ms (cache miss)
+17 silly packumentCache full:https://registry.npmjs.org/twilio set size:undefined disposed:false
+18 silly placeDep ROOT twilio@5.13.1 OK for: safeguard-backend@1.0.0 want: ^5.5.0
+19 silly fetch manifest scmp@^2.1.0
+20 silly packumentCache full:https://registry.npmjs.org/scmp cache-miss
+21 silly fetch manifest axios@^1.13.5
+22 silly packumentCache full:https://registry.npmjs.org/axios cache-miss
+23 silly fetch manifest dayjs@^1.11.9
+24 silly packumentCache full:https://registry.npmjs.org/dayjs cache-miss
+25 silly fetch manifest xmlbuilder@^13.0.2
+26 silly packumentCache full:https://registry.npmjs.org/xmlbuilder cache-miss
+27 silly fetch manifest https-proxy-agent@^5.0.0
+28 silly packumentCache full:https://registry.npmjs.org/https-proxy-agent cache-miss
+29 http fetch GET 200 https://registry.npmjs.org/scmp 106ms (cache miss)
+30 silly packumentCache full:https://registry.npmjs.org/scmp set size:undefined disposed:false
+31 http fetch GET 200 https://registry.npmjs.org/https-proxy-agent 212ms (cache miss)
+32 silly packumentCache full:https://registry.npmjs.org/https-proxy-agent set size:undefined disposed:false
+33 http fetch GET 200 https://registry.npmjs.org/xmlbuilder 216ms (cache miss)
+34 silly packumentCache full:https://registry.npmjs.org/xmlbuilder set size:undefined disposed:false
+35 http fetch GET 200 https://registry.npmjs.org/dayjs 261ms (cache miss)
+36 silly packumentCache full:https://registry.npmjs.org/dayjs set size:undefined disposed:false
+37 http fetch GET 200 https://registry.npmjs.org/axios 268ms (cache miss)
+38 silly packumentCache full:https://registry.npmjs.org/axios set size:undefined disposed:false
+39 silly placeDep ROOT axios@1.15.2 OK for: twilio@5.13.1 want: ^1.13.5
+40 silly placeDep ROOT dayjs@1.11.20 OK for: twilio@5.13.1 want: ^1.11.9
+41 silly placeDep node_modules/twilio https-proxy-agent@5.0.1 OK for: twilio@5.13.1 want: ^5.0.0
+42 silly placeDep ROOT scmp@2.1.0 OK for: twilio@5.13.1 want: ^2.1.0
+43 silly placeDep ROOT xmlbuilder@13.0.2 OK for: twilio@5.13.1 want: ^13.0.2
+44 silly fetch manifest follow-redirects@^1.15.11
+45 silly packumentCache full:https://registry.npmjs.org/follow-redirects cache-miss
+46 silly fetch manifest form-data@^4.0.5
+47 silly packumentCache full:https://registry.npmjs.org/form-data cache-miss
+48 silly fetch manifest proxy-from-env@^2.1.0
+49 silly packumentCache full:https://registry.npmjs.org/proxy-from-env cache-miss
+50 silly fetch manifest debug@4
+51 silly packumentCache full:https://registry.npmjs.org/debug cache-miss
+52 silly fetch manifest agent-base@6
+53 silly packumentCache full:https://registry.npmjs.org/agent-base cache-miss
+54 http fetch GET 200 https://registry.npmjs.org/proxy-from-env 121ms (cache miss)
+55 silly packumentCache full:https://registry.npmjs.org/proxy-from-env set size:undefined disposed:false
+56 http fetch GET 200 https://registry.npmjs.org/agent-base 123ms (cache miss)
+57 silly packumentCache full:https://registry.npmjs.org/agent-base set size:undefined disposed:false
+58 http fetch GET 200 https://registry.npmjs.org/follow-redirects 136ms (cache miss)
+59 silly packumentCache full:https://registry.npmjs.org/follow-redirects set size:undefined disposed:false
+60 http fetch GET 200 https://registry.npmjs.org/debug 151ms (cache miss)
+61 silly packumentCache full:https://registry.npmjs.org/debug set size:undefined disposed:false
+62 http fetch GET 200 https://registry.npmjs.org/form-data 165ms (cache miss)
+63 silly packumentCache full:https://registry.npmjs.org/form-data set size:undefined disposed:false
+64 silly placeDep ROOT follow-redirects@1.16.0 OK for: axios@1.15.2 want: ^1.15.11
+65 silly placeDep node_modules/axios form-data@4.0.5 OK for: axios@1.15.2 want: ^4.0.5
+66 silly placeDep ROOT proxy-from-env@2.1.0 OK for: axios@1.15.2 want: ^2.1.0
+67 silly placeDep node_modules/twilio agent-base@6.0.2 OK for: https-proxy-agent@5.0.1 want: 6
+68 silly placeDep node_modules/twilio debug@4.4.3 OK for: https-proxy-agent@5.0.1 want: 4
+69 silly fetch manifest ms@^2.1.3
+70 silly packumentCache full:https://registry.npmjs.org/ms cache-miss
+71 http fetch GET 200 https://registry.npmjs.org/ms 70ms (cache miss)
+72 silly packumentCache full:https://registry.npmjs.org/ms set size:undefined disposed:false
+73 silly placeDep node_modules/twilio ms@2.1.3 OK for: debug@4.4.3 want: ^2.1.3
+74 silly reify moves {}
+75 silly audit bulk request {
+75 silly audit   '@fastify/busboy': [ '3.2.0' ],
+75 silly audit   '@firebase/app-check-interop-types': [ '0.3.3' ],
+75 silly audit   '@firebase/app-types': [ '0.9.4' ],
+75 silly audit   '@firebase/auth-interop-types': [ '0.2.4' ],
+75 silly audit   '@firebase/component': [ '0.7.2' ],
+75 silly audit   '@firebase/database': [ '1.1.2' ],
+75 silly audit   '@firebase/database-compat': [ '2.1.3' ],
+75 silly audit   '@firebase/database-types': [ '1.0.19' ],
+75 silly audit   '@firebase/logger': [ '0.5.0' ],
+75 silly audit   '@firebase/util': [ '1.15.0' ],
+75 silly audit   '@google-cloud/firestore': [ '7.11.6' ],
+75 silly audit   '@google-cloud/paginator': [ '5.0.2' ],
+75 silly audit   '@google-cloud/projectify': [ '4.0.0' ],
+75 silly audit   '@google-cloud/promisify': [ '4.0.0' ],
+75 silly audit   '@google-cloud/storage': [ '7.19.0' ],
+75 silly audit   'gcp-metadata': [ '6.1.1', '8.1.2' ],
+75 silly audit   'google-auth-library': [ '9.15.1', '10.6.2' ],
+75 silly audit   'google-logging-utils': [ '0.0.2', '1.1.3' ],
+75 silly audit   uuid: [ '8.3.2', '9.0.1', '11.1.0' ],
+75 silly audit   '@grpc/grpc-js': [ '1.14.3' ],
+75 silly audit   '@grpc/proto-loader': [ '0.8.0', '0.7.15' ],
+75 silly audit   '@js-sdsl/ordered-map': [ '4.4.2' ],
+75 silly audit   '@nodable/entities': [ '2.1.0' ],
+75 silly audit   '@opentelemetry/api': [ '1.9.1' ],
+75 silly audit   '@protobufjs/aspromise': [ '1.1.2' ],
+75 silly audit   '@protobufjs/base64': [ '1.1.2' ],
+75 silly audit   '@protobufjs/codegen': [ '2.0.4' ],
+75 silly audit   '@protobufjs/eventemitter': [ '1.1.0' ],
+75 silly audit   '@protobufjs/fetch': [ '1.1.0' ],
+75 silly audit   '@protobufjs/float': [ '1.0.2' ],
+75 silly audit   '@protobufjs/inquire': [ '1.1.0' ],
+75 silly audit   '@protobufjs/path': [ '1.1.2' ],
+75 silly audit   '@protobufjs/pool': [ '1.1.0' ],
+75 silly audit   '@protobufjs/utf8': [ '1.1.0' ],
+75 silly audit   '@tootallnate/once': [ '2.0.0' ],
+75 silly audit   '@types/caseless': [ '0.12.5' ],
+75 silly audit   '@types/jsonwebtoken': [ '9.0.10' ],
+75 silly audit   '@types/long': [ '4.0.2' ],
+75 silly audit   '@types/ms': [ '2.1.0' ],
+75 silly audit   '@types/node': [ '25.6.0' ],
+75 silly audit   '@types/request': [ '2.48.13' ],
+75 silly audit   '@types/tough-cookie': [ '4.0.5' ],
+75 silly audit   'abort-controller': [ '3.0.0' ],
+75 silly audit   accepts: [ '1.3.8' ],
+75 silly audit   'agent-base': [ '7.1.4', '6.0.2' ],
+75 silly audit   'ansi-regex': [ '5.0.1' ],
+75 silly audit   'ansi-styles': [ '4.3.0' ],
+75 silly audit   anymatch: [ '3.1.3' ],
+75 silly audit   'array-flatten': [ '1.1.1' ],
+75 silly audit   arrify: [ '2.0.1' ],
+75 silly audit   'async-retry': [ '1.3.3' ],
+75 silly audit   asynckit: [ '0.4.0' ],
+75 silly audit   'balanced-match': [ '4.0.4' ],
+75 silly audit   'base64-js': [ '1.5.1' ],
+75 silly audit   'bignumber.js': [ '9.3.1' ],
+75 silly audit   'binary-extensions': [ '2.3.0' ],
+75 silly audit   'body-parser': [ '1.20.4' ],
+75 silly audit   'brace-expansion': [ '5.0.5' ],
+75 silly audit   braces: [ '3.0.3' ],
+75 silly audit   'buffer-equal-constant-time': [ '1.0.1' ],
+75 silly audit   bytes: [ '3.1.2' ],
+75 silly audit   'call-bind-apply-helpers': [ '1.0.2' ],
+75 silly audit   'call-bound': [ '1.0.4' ],
+75 silly audit   chokidar: [ '3.6.0' ],
+75 silly audit   cliui: [ '8.0.1' ],
+75 silly audit   'color-convert': [ '2.0.1' ],
+75 silly audit   'color-name': [ '1.1.4' ],
+75 silly audit   'combined-stream': [ '1.0.8' ],
+75 silly audit   'content-disposition': [ '0.5.4' ],
+75 silly audit   'content-type': [ '1.0.5' ],
+75 silly audit   cookie: [ '0.7.2' ],
+75 silly audit   'cookie-signature': [ '1.0.7' ],
+75 silly audit   cors: [ '2.8.6' ],
+75 silly audit   'data-uri-to-buffer': [ '4.0.1' ],
+75 silly audit   debug: [ '2.6.9', '4.4.3' ],
+75 silly audit   'delayed-stream': [ '1.0.0' ],
+75 silly audit   depd: [ '2.0.0' ],
+75 silly audit   destroy: [ '1.2.0' ],
+75 silly audit   dotenv: [ '16.6.1' ],
+75 silly audit   'dunder-proto': [ '1.0.1' ],
+75 silly audit   duplexify: [ '4.1.3' ],
+75 silly audit   'ecdsa-sig-formatter': [ '1.0.11' ],
+75 silly audit   'ee-first': [ '1.1.1' ],
+75 silly audit   'emoji-regex': [ '8.0.0' ],
+75 silly audit   encodeurl: [ '2.0.0' ],
+75 silly audit   'end-of-stream': [ '1.4.5' ],
+75 silly audit   'es-define-property': [ '1.0.1' ],
+75 silly audit   'es-errors': [ '1.3.0' ],
+75 silly audit   'es-object-atoms': [ '1.1.1' ],
+75 silly audit   'es-set-tostringtag': [ '2.1.0' ],
+75 silly audit   escalade: [ '3.2.0' ],
+75 silly audit   'escape-html': [ '1.0.3' ],
+75 silly audit   etag: [ '1.8.1' ],
+75 silly audit   'event-target-shim': [ '5.0.1' ],
+75 silly audit   express: [ '4.22.1' ],
+75 silly audit   extend: [ '3.0.2' ],
+75 silly audit   'farmhash-modern': [ '1.1.0' ],
+75 silly audit   'fast-deep-equal': [ '3.1.3' ],
+75 silly audit   'fast-xml-builder': [ '1.1.5' ],
+75 silly audit   'fast-xml-parser': [ '5.7.1' ],
+75 silly audit   'faye-websocket': [ '0.11.4' ],
+75 silly audit   'fetch-blob': [ '3.2.0' ],
+75 silly audit   'fill-range': [ '7.1.1' ],
+75 silly audit   finalhandler: [ '1.3.2' ],
+75 silly audit   'firebase-admin': [ '13.8.0' ],
+75 silly audit   'form-data': [ '2.5.5', '4.0.5' ],
+75 silly audit   'formdata-polyfill': [ '4.0.10' ],
+75 silly audit   forwarded: [ '0.2.0' ],
+75 silly audit   fresh: [ '0.5.2' ],
+75 silly audit   fsevents: [ '2.3.3' ],
+75 silly audit   'function-bind': [ '1.1.2' ],
+75 silly audit   'functional-red-black-tree': [ '1.0.1' ],
+75 silly audit   gaxios: [ '6.7.1', '7.1.4' ],
+75 silly audit   'node-fetch': [ '3.3.2', '2.7.0' ],
+75 silly audit   'get-caller-file': [ '2.0.5' ],
+75 silly audit   'get-intrinsic': [ '1.3.0' ],
+75 silly audit   'get-proto': [ '1.0.1' ],
+75 silly audit   'glob-parent': [ '5.1.2' ],
+75 silly audit   'google-gax': [ '4.6.1' ],
+75 silly audit   gopd: [ '1.2.0' ],
+75 silly audit   gtoken: [ '7.1.0' ],
+75 silly audit   'has-flag': [ '3.0.0' ],
+75 silly audit   'has-symbols': [ '1.1.0' ],
+75 silly audit   'has-tostringtag': [ '1.0.2' ],
+75 silly audit   hasown: [ '2.0.3' ],
+75 silly audit   'html-entities': [ '2.6.0' ],
+75 silly audit   'http-errors': [ '2.0.1' ],
+75 silly audit   'http-parser-js': [ '0.5.10' ],
+75 silly audit   'http-proxy-agent': [ '5.0.0' ],
+75 silly audit   ms: [ '2.1.3', '2.0.0' ],
+75 silly audit   'https-proxy-agent': [ '7.0.6', '5.0.1' ],
+75 silly audit   'iconv-lite': [ '0.4.24' ],
+75 silly audit   'ignore-by-default': [ '1.0.1' ],
+75 silly audit   inherits: [ '2.0.4' ],
+75 silly audit   'ipaddr.js': [ '1.9.1' ],
+75 silly audit   'is-binary-path': [ '2.1.0' ],
+75 silly audit   'is-extglob': [ '2.1.1' ],
+75 silly audit   'is-fullwidth-code-point': [ '3.0.0' ],
+75 silly audit   'is-glob': [ '4.0.3' ],
+75 silly audit   'is-number': [ '7.0.0' ],
+75 silly audit   'is-stream': [ '2.0.1' ],
+75 silly audit   jose: [ '4.15.9' ],
+75 silly audit   'json-bigint': [ '1.0.0' ],
+75 silly audit   jsonwebtoken: [ '9.0.3' ],
+75 silly audit   jwa: [ '2.0.1' ],
+75 silly audit   'jwks-rsa': [ '3.2.2' ],
+75 silly audit   jws: [ '4.0.1' ],
+75 silly audit   limiter: [ '1.1.5' ],
+75 silly audit   'lodash.camelcase': [ '4.3.0' ],
+75 silly audit   'lodash.clonedeep': [ '4.5.0' ],
+75 silly audit   'lodash.includes': [ '4.3.0' ],
+75 silly audit   'lodash.isboolean': [ '3.0.3' ],
+75 silly audit   'lodash.isinteger': [ '4.0.4' ],
+75 silly audit   'lodash.isnumber': [ '3.0.3' ],
+75 silly audit   'lodash.isplainobject': [ '4.0.6' ],
+75 silly audit   'lodash.isstring': [ '4.0.1' ],
+75 silly audit   'lodash.once': [ '4.1.1' ],
+75 silly audit   long: [ '5.3.2' ],
+75 silly audit   'lru-cache': [ '6.0.0' ],
+75 silly audit   'lru-memoizer': [ '2.3.0' ],
+75 silly audit   'math-intrinsics': [ '1.1.0' ],
+75 silly audit   'media-typer': [ '0.3.0' ],
+75 silly audit   'merge-descriptors': [ '1.0.3' ],
+75 silly audit   methods: [ '1.1.2' ],
+75 silly audit   mime: [ '3.0.0', '1.6.0' ],
+75 silly audit   'mime-db': [ '1.52.0' ],
+75 silly audit   'mime-types': [ '2.1.35' ],
+75 silly audit   minimatch: [ '10.2.5' ],
+75 silly audit   negotiator: [ '0.6.3' ],
+75 silly audit   'node-domexception': [ '1.0.0' ],
+75 silly audit   'node-forge': [ '1.4.0' ],
+75 silly audit   nodemon: [ '3.1.14' ],
+75 silly audit   'normalize-path': [ '3.0.0' ],
+75 silly audit   'object-assign': [ '4.1.1' ],
+75 silly audit   'object-hash': [ '3.0.0' ],
+75 silly audit   'object-inspect': [ '1.13.4' ],
+75 silly audit   'on-finished': [ '2.4.1' ],
+75 silly audit   once: [ '1.4.0' ],
+75 silly audit   'p-limit': [ '3.1.0' ],
+75 silly audit   parseurl: [ '1.3.3' ],
+75 silly audit   'path-expression-matcher': [ '1.5.0' ],
+75 silly audit   'path-to-regexp': [ '0.1.13' ],
+75 silly audit   picomatch: [ '2.3.2' ],
+75 silly audit   'proto3-json-serializer': [ '2.0.2' ],
+75 silly audit   protobufjs: [ '7.5.5' ],
+75 silly audit   'proxy-addr': [ '2.0.7' ],
+75 silly audit   'pstree.remy': [ '1.1.8' ],
+75 silly audit   qs: [ '6.14.2' ],
+75 silly audit   'range-parser': [ '1.2.1' ],
+75 silly audit   'raw-body': [ '2.5.3' ],
+75 silly audit   'readable-stream': [ '3.6.2' ],
+75 silly audit   readdirp: [ '3.6.0' ],
+75 silly audit   'require-directory': [ '2.1.1' ],
+75 silly audit   retry: [ '0.13.1' ],
+75 silly audit   'retry-request': [ '7.0.2' ],
+75 silly audit   'safe-buffer': [ '5.2.1' ],
+75 silly audit   'safer-buffer': [ '2.1.2' ],
+75 silly audit   semver: [ '7.7.4' ],
+75 silly audit   send: [ '0.19.2' ],
+75 silly audit   'serve-static': [ '1.16.3' ],
+75 silly audit   setprototypeof: [ '1.2.0' ],
+75 silly audit   'side-channel': [ '1.1.0' ],
+75 silly audit   'side-channel-list': [ '1.0.1' ],
+75 silly audit   'side-channel-map': [ '1.0.1' ],
+75 silly audit   'side-channel-weakmap': [ '1.0.2' ],
+75 silly audit   'simple-update-notifier': [ '2.0.0' ],
+75 silly audit   statuses: [ '2.0.2' ],
+75 silly audit   'stream-events': [ '1.0.5' ],
+75 silly audit   'stream-shift': [ '1.0.3' ],
+75 silly audit   string_decoder: [ '1.3.0' ],
+75 silly audit   'string-width': [ '4.2.3' ],
+75 silly audit   'strip-ansi': [ '6.0.1' ],
+75 silly audit   strnum: [ '2.2.3' ],
+75 silly audit   stubs: [ '3.0.0' ],
+75 silly audit   'supports-color': [ '5.5.0' ],
+75 silly audit   'teeny-request': [ '9.0.0' ],
+75 silly audit   'to-regex-range': [ '5.0.1' ],
+75 silly audit   toidentifier: [ '1.0.1' ],
+75 silly audit   touch: [ '3.1.1' ],
+75 silly audit   tr46: [ '0.0.3' ],
+75 silly audit   tslib: [ '2.8.1' ],
+75 silly audit   'type-is': [ '1.6.18' ],
+75 silly audit   undefsafe: [ '2.0.5' ],
+75 silly audit   'undici-types': [ '7.19.2' ],
+75 silly audit   unpipe: [ '1.0.0' ],
+75 silly audit   'util-deprecate': [ '1.0.2' ],
+75 silly audit   'utils-merge': [ '1.0.1' ],
+75 silly audit   vary: [ '1.1.2' ],
+75 silly audit   'web-streams-polyfill': [ '3.3.3' ],
+75 silly audit   'webidl-conversions': [ '3.0.1' ],
+75 silly audit   'websocket-driver': [ '0.7.4' ],
+75 silly audit   'websocket-extensions': [ '0.1.4' ],
+75 silly audit   'whatwg-url': [ '5.0.0' ],
+75 silly audit   'wrap-ansi': [ '7.0.0' ],
+75 silly audit   wrappy: [ '1.0.2' ],
+75 silly audit   y18n: [ '5.0.8' ],
+75 silly audit   yallist: [ '4.0.0' ],
+75 silly audit   yargs: [ '17.7.2' ],
+75 silly audit   'yargs-parser': [ '21.1.1' ],
+75 silly audit   'yocto-queue': [ '0.1.0' ],
+75 silly audit   twilio: [ '5.13.1' ],
+75 silly audit   axios: [ '1.15.2' ],
+75 silly audit   dayjs: [ '1.11.20' ],
+75 silly audit   scmp: [ '2.1.0' ],
+75 silly audit   xmlbuilder: [ '13.0.2' ],
+75 silly audit   'follow-redirects': [ '1.16.0' ],
+75 silly audit   'proxy-from-env': [ '2.1.0' ]
+75 silly audit }
+76 http cache proxy-from-env@https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz 0ms (cache hit)
+77 http cache xmlbuilder@https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-13.0.2.tgz 0ms (cache hit)
+78 http cache follow-redirects@https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz 0ms (cache hit)
+79 http cache scmp@https://registry.npmjs.org/scmp/-/scmp-2.1.0.tgz 0ms (cache hit)
+80 http cache form-data@https://registry.npmjs.org/form-data/-/form-data-4.0.5.tgz 0ms (cache hit)
+81 http cache ms@https://registry.npmjs.org/ms/-/ms-2.1.3.tgz 0ms (cache hit)
+82 http cache debug@https://registry.npmjs.org/debug/-/debug-4.4.3.tgz 0ms (cache hit)
+83 http cache agent-base@https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz 0ms (cache hit)
+84 http cache https-proxy-agent@https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz 0ms (cache hit)
+85 silly tarball no local data for proxy-from-env@https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz. Extracting by manifest.
+86 silly tarball no local data for xmlbuilder@https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-13.0.2.tgz. Extracting by manifest.
+87 silly tarball no local data for follow-redirects@https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz. Extracting by manifest.
+88 silly tarball no local data for scmp@https://registry.npmjs.org/scmp/-/scmp-2.1.0.tgz. Extracting by manifest.
+89 silly tarball no local data for form-data@https://registry.npmjs.org/form-data/-/form-data-4.0.5.tgz. Extracting by manifest.
+90 silly tarball no local data for ms@https://registry.npmjs.org/ms/-/ms-2.1.3.tgz. Extracting by manifest.
+91 silly tarball no local data for debug@https://registry.npmjs.org/debug/-/debug-4.4.3.tgz. Extracting by manifest.
+92 silly tarball no local data for agent-base@https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz. Extracting by manifest.
+93 silly tarball no local data for https-proxy-agent@https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz. Extracting by manifest.
+94 http cache axios@https://registry.npmjs.org/axios/-/axios-1.15.2.tgz 0ms (cache hit)
+95 http cache dayjs@https://registry.npmjs.org/dayjs/-/dayjs-1.11.20.tgz 0ms (cache hit)
+96 http cache twilio@https://registry.npmjs.org/twilio/-/twilio-5.13.1.tgz 0ms (cache hit)
+97 silly tarball no local data for axios@https://registry.npmjs.org/axios/-/axios-1.15.2.tgz. Extracting by manifest.
+98 silly tarball no local data for dayjs@https://registry.npmjs.org/dayjs/-/dayjs-1.11.20.tgz. Extracting by manifest.
+99 silly tarball no local data for twilio@https://registry.npmjs.org/twilio/-/twilio-5.13.1.tgz. Extracting by manifest.
+100 http fetch GET 200 https://registry.npmjs.org/scmp/-/scmp-2.1.0.tgz 221ms (cache miss)
+101 http fetch GET 200 https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz 248ms (cache miss)
+102 http fetch GET 200 https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz 261ms (cache miss)
+103 http fetch GET 200 https://registry.npmjs.org/ms/-/ms-2.1.3.tgz 276ms (cache miss)
+104 warn deprecated scmp@2.1.0: Just use Node.js's crypto.timingSafeEqual()
+105 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 334ms
+106 silly audit report {
+106 silly audit report   uuid: [
+106 silly audit report     {
+106 silly audit report       id: 1116970,
+106 silly audit report       url: 'https://github.com/advisories/GHSA-w5hq-g745-h8pq',
+106 silly audit report       title: 'uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided',
+106 silly audit report       severity: 'moderate',
+106 silly audit report       vulnerable_versions: '<14.0.0',
+106 silly audit report       cwe: [Array],
+106 silly audit report       cvss: [Object]
+106 silly audit report     }
+106 silly audit report   ],
+106 silly audit report   '@tootallnate/once': [
+106 silly audit report     {
+106 silly audit report       id: 1113977,
+106 silly audit report       url: 'https://github.com/advisories/GHSA-vpq2-c234-7xj6',
+106 silly audit report       title: '@tootallnate/once vulnerable to Incorrect Control Flow Scoping',
+106 silly audit report       severity: 'low',
+106 silly audit report       vulnerable_versions: '<3.0.1',
+106 silly audit report       cwe: [Array],
+106 silly audit report       cvss: [Object]
+106 silly audit report     }
+106 silly audit report   ]
+106 silly audit report }
+107 silly packumentCache corgi:https://registry.npmjs.org/uuid cache-miss
+108 silly packumentCache corgi:https://registry.npmjs.org/@tootallnate%2fonce cache-miss
+109 http fetch GET 200 https://registry.npmjs.org/debug/-/debug-4.4.3.tgz 368ms (cache miss)
+110 http fetch GET 200 https://registry.npmjs.org/form-data/-/form-data-4.0.5.tgz 376ms (cache miss)
+111 http fetch GET 200 https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz 374ms (cache miss)
+112 http fetch GET 200 https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz 378ms (cache miss)
+113 http fetch GET 200 https://registry.npmjs.org/uuid 102ms (cache miss)
+114 silly packumentCache corgi:https://registry.npmjs.org/uuid set size:undefined disposed:false
+115 http fetch GET 200 https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-13.0.2.tgz 514ms (cache miss)
+116 http fetch GET 200 https://registry.npmjs.org/@tootallnate%2fonce 302ms (cache miss)
+117 silly packumentCache corgi:https://registry.npmjs.org/@tootallnate%2fonce set size:undefined disposed:false
+118 silly packumentCache corgi:https://registry.npmjs.org/@google-cloud%2fstorage cache-miss
+119 silly packumentCache corgi:https://registry.npmjs.org/gaxios cache-miss
+120 silly packumentCache corgi:https://registry.npmjs.org/google-gax cache-miss
+121 silly packumentCache corgi:https://registry.npmjs.org/teeny-request cache-miss
+122 silly packumentCache corgi:https://registry.npmjs.org/firebase-admin cache-miss
+123 http fetch GET 200 https://registry.npmjs.org/gaxios 98ms (cache miss)
+124 silly packumentCache corgi:https://registry.npmjs.org/gaxios set size:undefined disposed:false
+125 http fetch GET 200 https://registry.npmjs.org/teeny-request 120ms (cache miss)
+126 silly packumentCache corgi:https://registry.npmjs.org/teeny-request set size:undefined disposed:false
+127 http fetch GET 200 https://registry.npmjs.org/firebase-admin 151ms (cache miss)
+128 silly packumentCache corgi:https://registry.npmjs.org/firebase-admin set size:undefined disposed:false
+129 http fetch GET 200 https://registry.npmjs.org/google-gax 196ms (cache miss)
+130 silly packumentCache corgi:https://registry.npmjs.org/google-gax set size:undefined disposed:false
+131 http fetch GET 200 https://registry.npmjs.org/axios/-/axios-1.15.2.tgz 873ms (cache miss)
+132 http fetch GET 200 https://registry.npmjs.org/@google-cloud%2fstorage 732ms (cache miss)
+133 silly packumentCache corgi:https://registry.npmjs.org/@google-cloud%2fstorage set size:undefined disposed:false
+134 silly packumentCache corgi:https://registry.npmjs.org/http-proxy-agent cache-miss
+135 http fetch GET 200 https://registry.npmjs.org/http-proxy-agent 68ms (cache miss)
+136 silly packumentCache corgi:https://registry.npmjs.org/http-proxy-agent set size:undefined disposed:false
+137 silly packumentCache corgi:https://registry.npmjs.org/gcp-metadata cache-miss
+138 silly packumentCache corgi:https://registry.npmjs.org/google-auth-library cache-miss
+139 silly packumentCache corgi:https://registry.npmjs.org/gtoken cache-miss
+140 http fetch GET 200 https://registry.npmjs.org/google-auth-library 81ms (cache miss)
+141 silly packumentCache corgi:https://registry.npmjs.org/google-auth-library set size:undefined disposed:false
+142 http fetch GET 200 https://registry.npmjs.org/dayjs/-/dayjs-1.11.20.tgz 1592ms (cache miss)
+143 http fetch GET 200 https://registry.npmjs.org/gcp-metadata 305ms (cache miss)
+144 silly packumentCache corgi:https://registry.npmjs.org/gcp-metadata set size:undefined disposed:false
+145 http fetch GET 200 https://registry.npmjs.org/gtoken 783ms (cache miss)
+146 silly packumentCache corgi:https://registry.npmjs.org/gtoken set size:undefined disposed:false
+147 silly packumentCache corgi:https://registry.npmjs.org/retry-request cache-miss
+148 http fetch GET 200 https://registry.npmjs.org/retry-request 75ms (cache miss)
+149 silly packumentCache corgi:https://registry.npmjs.org/retry-request set size:undefined disposed:false
+150 silly packumentCache corgi:https://registry.npmjs.org/@google-cloud%2ffirestore cache-miss
+151 http fetch GET 200 https://registry.npmjs.org/@google-cloud%2ffirestore 311ms (cache miss)
+152 silly packumentCache corgi:https://registry.npmjs.org/@google-cloud%2ffirestore set size:undefined disposed:false
+153 http fetch GET 200 https://registry.npmjs.org/twilio/-/twilio-5.13.1.tgz 4534ms (cache miss)
+154 silly ADD node_modules/proxy-from-env
+155 silly ADD node_modules/follow-redirects
+156 silly ADD node_modules/xmlbuilder
+157 silly ADD node_modules/scmp
+158 silly ADD node_modules/dayjs
+159 silly ADD node_modules/axios
+160 silly ADD node_modules/axios/node_modules/form-data
+161 silly ADD node_modules/twilio
+162 silly ADD node_modules/twilio/node_modules/ms
+163 silly ADD node_modules/twilio/node_modules/debug
+164 silly ADD node_modules/twilio/node_modules/agent-base
+165 silly ADD node_modules/twilio/node_modules/https-proxy-agent
+166 verbose cwd C:\Users\ADMIN\Desktop\Abhaya\backend
+167 verbose os Windows_NT 10.0.26200
+168 verbose node v24.14.1
+169 verbose npm  v11.11.0
+170 verbose exit 0
+171 info ok

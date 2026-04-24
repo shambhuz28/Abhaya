@@ -13,13 +13,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "ABHAYA needs camera access to record emergency evidence.",
+        "NSMicrophoneUsageDescription": "ABHAYA needs microphone access to record emergency evidence with audio."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true
     },
     "web": {

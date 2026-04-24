@@ -35,6 +35,19 @@ export default function HomeScreen({ navigation }) {
   const displayName = user?.displayName || user?.name || 'Priya';
   const avatarLetter = displayName.trim().charAt(0).toUpperCase() || 'P';
 
+  const handleSosPress = () => {
+    Alert.alert('SOS Activated', 'Emergency detected. Recording started.', [
+      {
+        text: 'OK',
+        onPress: () =>
+          navigation.navigate('IncidentReport', {
+            autoStartEvidence: true,
+            triggerType: 'SOS',
+          }),
+      },
+    ]);
+  };
+
   const handleActionPress = (key) => {
     if (key === 'contacts') {
       navigation.navigate('EmergencyContacts');
@@ -156,7 +169,7 @@ export default function HomeScreen({ navigation }) {
         <TouchableOpacity
           activeOpacity={0.9}
           style={styles.sosWrap}
-          onPress={() => Alert.alert('SOS Ready', 'Hold for 2 seconds to activate emergency flow.')}
+          onPress={handleSosPress}
         >
           <View style={styles.sosButton}>
             <Ionicons name="alert-circle-outline" size={52} color="#fff" />
@@ -164,7 +177,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.sosHint}>Hold for 2 seconds to activate emergency</Text>
+        <Text style={styles.sosHint}>Tap SOS to activate emergency</Text>
 
         <View style={styles.activityCard}>
           <View style={styles.activityHeader}>

@@ -28,6 +28,13 @@ const verifyToken = async (req, res, next) => {
     } else {
       // Fallback: verify token via Firebase REST API (lookup user by idToken)
       const API_KEY = process.env.FIREBASE_API_KEY;
+      if (!API_KEY) {
+        return res.status(500).json({
+          success: false,
+          error:
+            'Backend misconfigured: FIREBASE_API_KEY is missing. Create backend/.env from backend/.env.example and restart the backend server.',
+        });
+      }
       const response = await fetch(
         `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`,
         {

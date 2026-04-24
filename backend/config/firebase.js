@@ -10,9 +10,13 @@ let adminInitialized = false;
 try {
   const fs = require('fs');
   const path = require('path');
-  const serviceAccountPath = path.resolve(
-    process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './config/serviceAccountKey.json'
-  );
+  const backendDir = path.resolve(__dirname, '..');
+  const envServiceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  const serviceAccountPath = envServiceAccountPath
+    ? (path.isAbsolute(envServiceAccountPath)
+        ? envServiceAccountPath
+        : path.resolve(backendDir, envServiceAccountPath))
+    : path.resolve(__dirname, 'serviceAccountKey.json');
 
   if (fs.existsSync(serviceAccountPath)) {
     const serviceAccount = require(serviceAccountPath);

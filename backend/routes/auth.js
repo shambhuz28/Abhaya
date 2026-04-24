@@ -6,7 +6,17 @@ const router = express.Router();
 // Firebase REST API base URLs
 const IDENTITY_URL = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const TOKEN_URL = 'https://securetoken.googleapis.com/v1/token';
-const API_KEY = process.env.FIREBASE_API_KEY;
+
+const requireFirebaseApiKey = (res) => {
+  const apiKey = process.env.FIREBASE_API_KEY;
+  if (apiKey) return apiKey;
+  res.status(500).json({
+    success: false,
+    error:
+      'Backend misconfigured: FIREBASE_API_KEY is missing. Create backend/.env from backend/.env.example and restart the backend server.',
+  });
+  return null;
+};
 
 /**
  * POST /api/auth/signup
@@ -14,6 +24,8 @@ const API_KEY = process.env.FIREBASE_API_KEY;
  * Body: { email, password, displayName }
  */
 router.post('/signup', async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   const { email, password, displayName } = req.body;
 
   if (!email || !password) {
@@ -32,7 +44,7 @@ router.post('/signup', async (req, res) => {
 
   try {
     // Step 1: Create user via Firebase REST API
-    const signUpResponse = await fetch(`${IDENTITY_URL}:signUp?key=${API_KEY}`, {
+    const signUpResponse = await fetch(`${IDENTITY_URL}:signUp?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -68,7 +80,7 @@ router.post('/signup', async (req, res) => {
 
     // Step 2: Set display name if provided
     if (displayName) {
-      await fetch(`${IDENTITY_URL}:update?key=${API_KEY}`, {
+      await fetch(`${IDENTITY_URL}:update?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,6 +115,8 @@ router.post('/signup', async (req, res) => {
  * Body: { email, password }
  */
 router.post('/login', async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -114,7 +128,7 @@ router.post('/login', async (req, res) => {
 
   try {
     // Sign in via Firebase REST API
-    const response = await fetch(`${IDENTITY_URL}:signInWithPassword?key=${API_KEY}`, {
+    const response = await fetch(`${IDENTITY_URL}:signInWithPassword?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -170,6 +184,8 @@ router.post('/login', async (req, res) => {
  * Body: { refreshToken }
  */
 router.post('/refresh', async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -180,7 +196,7 @@ router.post('/refresh', async (req, res) => {
   }
 
   try {
-    const response = await fetch(`${TOKEN_URL}?key=${API_KEY}`, {
+    const response = await fetch(`${TOKEN_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -218,10 +234,12 @@ router.post('/refresh', async (req, res) => {
  * Requires: Authorization: Bearer <idToken>
  */
 router.get('/profile', verifyToken, async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   try {
     // Get full profile from Firebase REST API
     const idToken = req.headers.authorization.split('Bearer ')[1];
-    const response = await fetch(`${IDENTITY_URL}:lookup?key=${API_KEY}`, {
+    const response = await fetch(`${IDENTITY_URL}:lookup?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
@@ -259,6 +277,8 @@ router.get('/profile', verifyToken, async (req, res) => {
  * Body: { displayName, photoURL }
  */
 router.put('/profile', verifyToken, async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   const { displayName, photoURL } = req.body;
   const idToken = req.headers.authorization.split('Bearer ')[1];
 
@@ -267,7 +287,7 @@ router.put('/profile', verifyToken, async (req, res) => {
     if (displayName !== undefined) updateData.displayName = displayName;
     if (photoURL !== undefined) updateData.photoUrl = photoURL;
 
-    const response = await fetch(`${IDENTITY_URL}:update?key=${API_KEY}`, {
+    const response = await fetch(`${IDENTITY_URL}:update?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updateData),
@@ -301,10 +321,12 @@ router.put('/profile', verifyToken, async (req, res) => {
  * Requires: Authorization: Bearer <idToken>
  */
 router.delete('/account', verifyToken, async (req, res) => {
+  const apiKey = requireFirebaseApiKey(res);
+  if (!apiKey) return;
   const idToken = req.headers.authorization.split('Bearer ')[1];
 
   try {
-    const response = await fetch(`${IDENTITY_URL}:delete?key=${API_KEY}`, {
+    const response = await fetch(`${IDENTITY_URL}:delete?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),

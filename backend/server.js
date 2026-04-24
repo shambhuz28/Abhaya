@@ -1,4 +1,9 @@
-require('dotenv').config();
+const path = require('path');
+const dotenvResult = require('dotenv').config({ path: path.join(__dirname, '.env') });
+if (dotenvResult.error) {
+  console.warn('⚠️  backend/.env not found. Copy backend/.env.example -> backend/.env and restart the server.');
+}
+console.log(`ℹ️  FIREBASE_API_KEY ${process.env.FIREBASE_API_KEY ? 'loaded' : 'missing'}`);
 const express = require('express');
 const cors = require('cors');
 
@@ -19,6 +24,15 @@ app.use((req, res, next) => {
 // Routes
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
+
+const incidentRoutes = require('./routes/incidents');
+app.use('/api/incidents', incidentRoutes);
+
+const emailRoutes = require('./routes/email');
+// Supports both:
+// - POST /send-email (as requested)
+// - POST /api/send-email (if client uses an /api base URL)
+app.use(['/send-email', '/api/send-email'], emailRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -60,6 +74,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET    /api/auth/profile');
   console.log('  PUT    /api/auth/profile');
   console.log('  DELETE /api/auth/account');
+  console.log('  POST   /send-email');
+  console.log('  POST   /api/send-email');
   console.log('  GET    /api/health');
   console.log('');
 });

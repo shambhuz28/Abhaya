@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
+  ActivityIndicator,
+  Modal,
   View,
   Text,
   StyleSheet,
@@ -9,11 +12,262 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { useAuth } from '../context/AuthContext';
+import { useReport } from '../context/ReportContext';
+import { incidentAPI } from '../services/api';
+import { saveIncidentReport } from '../services/reportStorage';
 
-export default function IncidentReportScreen({ navigation }) {
+const getEmailEndpoint = () => {
+  const rawBase = String(
+    process.env.EXPO_PUBLIC_BACKEND_API_URL ||
+      process.env.EXPO_PUBLIC_API_URL ||
+      ''
+  )
+    .trim()
+    .replace(/\/+$/, '');
+
+  if (!rawBase) return '';
+  // If the base already includes /api, prefer /api/send-email.
+  if (/\/api$/i.test(rawBase)) return `${rawBase}/send-email`;
+  return `${rawBase}/send-email`;
+};
+
+const sendEmergencyEmailViaBackend = async (report) => {
+  const url = getEmailEndpoint();
+  if (!url) {
+    return {
+      success: false,
+      error: 'Backend URL is not configured. Set EXPO_PUBLIC_BACKEND_API_URL in root .env.',
+    };
+  }
+
+  if (!report || typeof report !== 'object') {
+    return { success: false, error: 'Report is missing.' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report }),
+      signal: controller.signal,
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data?.error || 'Failed to send emergency email.',
+      };
+    }
+
+    return { success: true, data };
+  } catch (e) {
+    return { success: false, error: e?.message || 'Failed to send emergency email.' };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const RECORD_SECONDS = 10;
+const MAX_VIDEO_BYTES = 3 * 1024 * 1024;
+
+const createIncidentId = () =>
+  `inc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+export default function IncidentReportScreen({ navigation, route }) {
   const { user } = useAuth();
+  const { setLatestReport } = useReport();
   const displayName = user?.displayName || user?.name || 'Priya Sharma';
+  const phone =
+    user?.phone || user?.phoneNumber || user?.mobile || user?.contact || '98XXXXXX90';
+
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
+  const cameraRef = useRef(null);
+  const autoStartedRef = useRef(false);
+  const reportRef = useRef(null);
+
+  const [incidentId, setIncidentId] = useState('');
+  const [recorderVisible, setRecorderVisible] = useState(false);
+  const [phase, setPhase] = useState('idle'); // idle | preparing | recording | uploading | success
+  const [flowError, setFlowError] = useState('');
+
+  const closeRecorder = () => {
+    try {
+      cameraRef.current?.stopRecording?.();
+    } catch {}
+    setRecorderVisible(false);
+    setPhase('idle');
+  };
+
+  const triggerEvidence = async ({ triggerType = 'SOS' } = {}) => {
+    setFlowError('');
+
+    const cameraGranted =
+      cameraPermission?.granted || (await requestCameraPermission())?.granted;
+
+    if (!cameraGranted) {
+      Alert.alert('Camera Permission Needed', 'Allow camera access to record evidence video.');
+      return;
+    }
+
+    const micGranted =
+      micPermission?.granted || (await requestMicPermission())?.granted;
+
+    if (!micGranted) {
+      Alert.alert(
+        'Microphone Permission Needed',
+        'Allow microphone access to record video with audio.'
+      );
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+    const generatedIncidentId = createIncidentId();
+
+    reportRef.current = {
+      incidentId: generatedIncidentId,
+      createdAt,
+      status: 'ACTIVE',
+      user: {
+        name: displayName || 'Demo User',
+        phone: phone || '0000000000',
+      },
+      location: {
+        lat: 21.1458,
+        lng: 79.0882,
+        address: 'Mock Location (Location tracking not enabled)',
+      },
+      trigger: {
+        type: triggerType,
+        riskScore: 'HIGH',
+      },
+      evidence: [],
+      timeline: ['SOS triggered'],
+      notification: {
+        sent: false,
+      },
+    };
+
+    setIncidentId(generatedIncidentId);
+
+    setRecorderVisible(true);
+    setPhase('preparing');
+  };
+
+  useEffect(() => {
+    const shouldAutoStart = Boolean(route?.params?.autoStartEvidence);
+    const triggerType = route?.params?.triggerType || 'SOS';
+
+    if (!shouldAutoStart || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    triggerEvidence({ triggerType });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.autoStartEvidence, route?.params?.triggerType]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!recorderVisible || phase !== 'preparing') return;
+
+      try {
+        setPhase('recording');
+
+        // Give the camera view a moment to mount before recording.
+        await new Promise((resolve) => setTimeout(resolve, 350));
+
+        const camera = cameraRef.current;
+        if (!camera?.recordAsync) {
+          throw new Error('Camera is not ready. Please try again.');
+        }
+
+        reportRef.current = {
+          ...(reportRef.current || {}),
+          timeline: [...(reportRef.current?.timeline || []), 'Recording started'],
+        };
+
+        const stopTimer = setTimeout(() => {
+          try {
+            camera.stopRecording?.();
+          } catch {}
+        }, RECORD_SECONDS * 1000);
+
+        const recordPromise = camera.recordAsync({
+          maxDuration: RECORD_SECONDS,
+          maxFileSize: MAX_VIDEO_BYTES,
+        });
+        const videoResult = await recordPromise;
+        clearTimeout(stopTimer);
+
+        const uri = videoResult?.uri;
+        if (!uri) {
+          throw new Error('Recording failed (no video uri).');
+        }
+
+        reportRef.current = {
+          ...(reportRef.current || {}),
+          timeline: [...(reportRef.current?.timeline || []), 'Recording stopped'],
+        };
+
+        setPhase('uploading');
+
+        const upload = await incidentAPI.uploadVideoToCloudinary(uri);
+        if (!upload?.success || !upload?.data?.url) {
+          throw new Error(upload?.error || 'Failed to upload video.');
+        }
+
+        const evidenceTimestamp = new Date().toISOString();
+        const updatedReport = {
+          ...(reportRef.current || {}),
+          evidence: [
+            ...(reportRef.current?.evidence || []),
+            {
+              type: 'video',
+              url: upload.data.url,
+              timestamp: evidenceTimestamp,
+            },
+          ],
+          timeline: [...(reportRef.current?.timeline || []), 'Video uploaded'],
+        };
+
+        const emailResult = await sendEmergencyEmailViaBackend(updatedReport);
+        const finalReport = {
+          ...updatedReport,
+          notification: { sent: Boolean(emailResult?.success) },
+        };
+
+        await saveIncidentReport(finalReport);
+        await setLatestReport(finalReport);
+
+        setPhase('success');
+        await new Promise((resolve) => setTimeout(resolve, 650));
+
+        closeRecorder();
+        navigation.replace('ReportDetails', {
+          incidentId: finalReport.incidentId,
+          report: finalReport,
+        });
+
+        setTimeout(() => {
+          if (emailResult?.success) {
+            Alert.alert('Success', 'Emergency alert sent via email');
+          } else {
+            Alert.alert('Failed', emailResult?.error || 'Failed to send emergency email');
+          }
+        }, 350);
+      } catch (e) {
+        setFlowError(e?.message || 'Evidence generation failed.');
+        setPhase('idle');
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorderVisible, phase]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -90,21 +344,17 @@ export default function IncidentReportScreen({ navigation }) {
               <Text style={styles.sectionTitle}>Evidence Files</Text>
             </View>
             
-            <View style={styles.evidenceFile}>
-              <View style={styles.evidenceIconWrap}>
-                <Ionicons name="play" size={14} color="#7b57d1" />
-              </View>
-              <Text style={styles.evidenceName}>Audio Evidence</Text>
-              <Text style={styles.evidenceMeta}>2:34</Text>
-            </View>
-
-            <View style={styles.evidenceFile}>
+            <TouchableOpacity
+              style={styles.evidenceFile}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('VideoEvidence', { incidentId })}
+            >
               <View style={styles.evidenceIconWrap}>
                 <Ionicons name="eye" size={14} color="#7b57d1" />
               </View>
               <Text style={styles.evidenceName}>Video Evidence</Text>
-              <Text style={styles.evidenceMeta}>1:45</Text>
-            </View>
+              <Text style={styles.evidenceMeta}>View</Text>
+            </TouchableOpacity>
 
             <View style={styles.evidenceFile}>
               <View style={styles.evidenceIconWrap}>
@@ -142,6 +392,55 @@ export default function IncidentReportScreen({ navigation }) {
         </TouchableOpacity>
         
       </ScrollView>
+
+      <Modal visible={recorderVisible} transparent animationType="fade" onRequestClose={closeRecorder}>
+        <View style={styles.recorderBackdrop}>
+          <View style={styles.recorderCard}>
+            <View style={styles.recorderHeader}>
+              <View style={styles.recorderTitleRow}>
+                <Ionicons name="radio-button-on" size={14} color="#ea5455" />
+                <Text style={styles.recorderTitle}>Recording Evidence</Text>
+              </View>
+              <TouchableOpacity onPress={closeRecorder} style={styles.recorderClose} activeOpacity={0.85}>
+                <Ionicons name="close" size={18} color="#111" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.cameraWrap}>
+              <CameraView
+                ref={cameraRef}
+                style={StyleSheet.absoluteFill}
+                facing="back"
+                mode="video"
+                videoQuality="480p"
+              />
+              <View style={styles.cameraOverlay}>
+                <View style={styles.cameraOverlayPill}>
+                  <Text style={styles.cameraOverlayText}>
+                    {phase === 'recording'
+                      ? `Recording… (${RECORD_SECONDS}s)`
+                      : phase === 'uploading'
+                        ? 'Uploading to cloud…'
+                        : phase === 'success'
+                          ? 'Report generated'
+                          : 'Preparing camera…'}
+                  </Text>
+                  {phase === 'uploading' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : null}
+                </View>
+              </View>
+            </View>
+
+            {flowError ? <Text style={styles.flowError}>{flowError}</Text> : null}
+            {!flowError ? (
+              <Text style={styles.recorderHint}>
+                Auto-stops after {RECORD_SECONDS} seconds. Keep the app in foreground.
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -187,4 +486,54 @@ const styles = StyleSheet.create({
   btnRed: { backgroundColor: '#ea5455' },
   btnGreen: { backgroundColor: '#4caf50' },
   btnPurple: { backgroundColor: '#7b57d1' },
+  btnGhost: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#eaddff' },
+  btnGhostText: { color: '#7b57d1', fontSize: 15, fontWeight: '800' },
+
+  recorderBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  recorderCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  recorderHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f2f2',
+  },
+  recorderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recorderTitle: { fontSize: 14, fontWeight: '900', color: '#111' },
+  recorderClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f2ebff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraWrap: { height: 360, backgroundColor: '#000' },
+  cameraOverlay: { position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' },
+  cameraOverlayPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.62)',
+  },
+  cameraOverlayText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  recorderHint: { paddingHorizontal: 16, paddingVertical: 12, color: '#8f8f96', fontSize: 12, fontWeight: '700' },
+  flowError: { paddingHorizontal: 16, paddingVertical: 12, color: '#ea5455', fontSize: 12, fontWeight: '800' },
 });
