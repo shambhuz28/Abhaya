@@ -338,3 +338,23 @@ export const incidentAPI = {
   },
 };
 
+// Video metadata (Firestore-backed via backend)
+export const videoAPI = {
+  saveVideo: async ({ videoUrl, incidentId }) => {
+    return await apiRequest('/save-video', {
+      method: 'POST',
+      body: { videoUrl, incidentId },
+    });
+  },
+
+  listUserVideos: async (userId) => {
+    const safeUserId = encodeURIComponent(String(userId || '').trim());
+    return await apiRequest(`/user-videos/${safeUserId}`, { method: 'GET' });
+  },
+
+  deleteVideo: async (id) => {
+    const safeId = encodeURIComponent(String(id || '').trim());
+    return await apiRequest(`/video/${safeId}`, { method: 'DELETE' });
+  },
+};
+

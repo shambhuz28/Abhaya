@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,7 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useReport } from '../context/ReportContext';
+import { exportIncidentReport } from '../services/reportExport';
 import { getIncidentReportById, getLatestIncidentReport } from '../services/reportStorage';
+import notificationsAPI from '../services/notifications';
 
 const formatTimestamp = (isoString) => {
   try {
@@ -38,6 +41,8 @@ export default function ReportDetailsScreen({ navigation, route }) {
   const [report, setReport] = useState(initialReport);
   const [loading, setLoading] = useState(!initialReport);
   const [error, setError] = useState('');
+  const [journeyTimeline, setJourneyTimeline] = useState([]);
+  const [downloadingReport, setDownloadingReport] = useState(false);
 
   const incidentId = report?.incidentId || passedIncidentId || '';
 
@@ -80,6 +85,29 @@ export default function ReportDetailsScreen({ navigation, route }) {
     }
   }, [report, passedIncidentId, loadReport]);
 
+  useEffect(() => {
+    const loadJourneyTimeline = async () => {
+      try {
+        const items = await notificationsAPI.list();
+        const journeyOnly = (Array.isArray(items) ? items : [])
+          .filter((n) => n?.source === 'journey')
+          .slice(0, 8)
+          .map((n) => ({
+            key: String(n.id),
+            label: n.title || n.message || 'Journey update',
+            value: n.message ? String(n.message) : formatTimestamp(n.createdAt),
+            createdAt: n.createdAt,
+          }));
+
+        setJourneyTimeline(journeyOnly);
+      } catch {
+        setJourneyTimeline([]);
+      }
+    };
+
+    loadJourneyTimeline();
+  }, [incidentId]);
+
   const openVideo = () => {
     navigation.navigate('VideoEvidence', { incidentId, showAll: true });
   };
@@ -90,13 +118,35 @@ export default function ReportDetailsScreen({ navigation, route }) {
   }, [incidentId]);
 
   const timelineItems = useMemo(() => {
-    const timeline = Array.isArray(report?.timeline) ? report.timeline : [];
-    return timeline.map((label, index) => ({ key: `${index}-${label}`, label }));
-  }, [report]);
+    const evidenceTimeline = Array.isArray(report?.timeline) ? report.timeline : [];
+    const evidenceItems = evidenceTimeline.map((label, index) => ({
+      key: `evidence-${index}-${label}`,
+      label,
+      value: report?.createdAt ? formatTimestamp(report.createdAt) : '',
+    }));
+
+    return [...journeyTimeline, ...evidenceItems].slice(0, 14);
+  }, [report, journeyTimeline]);
 
   const videoEvidenceCount = useMemo(() => {
     if (!Array.isArray(report?.evidence)) return 0;
     return report.evidence.filter((item) => item?.type === 'video' && item?.url).length;
+  }, [report]);
+
+  const handleDownloadReport = useCallback(async () => {
+    if (!report?.incidentId) {
+      Alert.alert('No Report Yet', 'No incident report is available to export.');
+      return;
+    }
+
+    try {
+      setDownloadingReport(true);
+      await exportIncidentReport(report);
+    } catch (e) {
+      Alert.alert('Download failed', e?.message || 'Could not export the report.');
+    } finally {
+      setDownloadingReport(false);
+    }
   }, [report]);
 
   return (
@@ -224,6 +274,7 @@ export default function ReportDetailsScreen({ navigation, route }) {
                 <View style={styles.timelineDot} />
                 <View style={styles.timelineText}>
                   <Text style={styles.timelineLabel}>{item.label}</Text>
+                  {item.value ? <Text style={styles.timelineValue}>{item.value}</Text> : null}
                 </View>
               </View>
             ))}
@@ -258,6 +309,20 @@ export default function ReportDetailsScreen({ navigation, route }) {
               </TouchableOpacity>
             </View>
           </View>
+
+          <TouchableOpacity
+            onPress={handleDownloadReport}
+            activeOpacity={0.85}
+            style={styles.downloadButton}
+            disabled={downloadingReport}
+          >
+            {downloadingReport ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="download-outline" size={18} color="#fff" />
+            )}
+            <Text style={styles.downloadButtonText}>Download Report</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -334,6 +399,18 @@ const styles = StyleSheet.create({
   },
   evidenceTitle: { fontSize: 13, fontWeight: '900', color: '#111' },
   evidenceMeta: { marginTop: 4, fontSize: 12, fontWeight: '600', color: '#8f8f96' },
+  downloadButton: {
+    marginTop: 6,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#7b57d1',
+  },
+  downloadButtonText: { fontSize: 14, fontWeight: '900', color: '#fff' },
 
   viewButton: {
     paddingHorizontal: 12,

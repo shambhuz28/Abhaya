@@ -26,6 +26,7 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+.npm-cache/
 
 # macOS
 .DS_Store
@@ -35,7 +36,6 @@ yarn-error.*
 .env
 .env.local
 .env*.local
-.env
 
 # Backend
 backend/node_modules/
@@ -50,7 +50,4 @@ backend/logs/
 # generated native folders
 /ios
 /android
-
-.env
-backend/.env
 *.env

@@ -41,6 +41,7 @@ const historyRoutes = require('./routes/history');
 const vehicleObservationRoutes = require('./routes/vehicleObservations');
 const incidentRoutes = require('./routes/incidents');
 const emailRoutes = require('./routes/email');
+const userVideoRoutes = require('./routes/userVideos');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/journey', journeyRoutes);
@@ -52,6 +53,13 @@ app.use('/api/incidents', incidentRoutes);
 // - POST /send-email
 // - POST /api/send-email (if client uses an /api base URL)
 app.use(['/send-email', '/api/send-email'], emailRoutes);
+
+// Video metadata (Firestore)
+// Supports both:
+// - /save-video, /user-videos/:userId, /video/:id
+// - /api/save-video, /api/user-videos/:userId, /api/video/:id
+app.use('/', userVideoRoutes);
+app.use('/api', userVideoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

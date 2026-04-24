@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { useAuth } from '../context/AuthContext';
 import { useReport } from '../context/ReportContext';
-import { incidentAPI } from '../services/api';
+import { incidentAPI, videoAPI } from '../services/api';
+import { exportIncidentReport } from '../services/reportExport';
 import { saveIncidentReport } from '../services/reportStorage';
 
 const getEmailEndpoint = () => {
@@ -84,7 +85,7 @@ const createIncidentId = () =>
 
 export default function IncidentReportScreen({ navigation, route }) {
   const { user } = useAuth();
-  const { setLatestReport } = useReport();
+  const { latestReport, setLatestReport } = useReport();
   const displayName = user?.displayName || user?.name || 'Priya Sharma';
   const phone =
     user?.phone || user?.phoneNumber || user?.mobile || user?.contact || '98XXXXXX90';
@@ -99,6 +100,7 @@ export default function IncidentReportScreen({ navigation, route }) {
   const [recorderVisible, setRecorderVisible] = useState(false);
   const [phase, setPhase] = useState('idle'); // idle | preparing | recording | uploading | success
   const [flowError, setFlowError] = useState('');
+  const [reportDownloading, setReportDownloading] = useState(false);
 
   const closeRecorder = () => {
     try {
@@ -106,6 +108,24 @@ export default function IncidentReportScreen({ navigation, route }) {
     } catch {}
     setRecorderVisible(false);
     setPhase('idle');
+  };
+
+  const handleDownloadReport = async () => {
+    const reportToExport = route?.params?.report || reportRef.current || latestReport;
+
+    if (!reportToExport?.incidentId) {
+      Alert.alert('No Report Yet', 'Generate or open an incident report before downloading it.');
+      return;
+    }
+
+    try {
+      setReportDownloading(true);
+      await exportIncidentReport(reportToExport);
+    } catch (e) {
+      Alert.alert('Download failed', e?.message || 'Could not export the report.');
+    } finally {
+      setReportDownloading(false);
+    }
   };
 
   const triggerEvidence = async ({ triggerType = 'SOS' } = {}) => {
@@ -221,6 +241,16 @@ export default function IncidentReportScreen({ navigation, route }) {
         const upload = await incidentAPI.uploadVideoToCloudinary(uri);
         if (!upload?.success || !upload?.data?.url) {
           throw new Error(upload?.error || 'Failed to upload video.');
+        }
+
+        // Store per-user video metadata in Firestore (backend). Do not block SOS flow if it fails.
+        try {
+          await videoAPI.saveVideo({
+            videoUrl: upload.data.url,
+            incidentId: reportRef.current?.incidentId,
+          });
+        } catch {
+          // ignore: evidence flow should still continue even if Firestore metadata save fails
         }
 
         const evidenceTimestamp = new Date().toISOString();
@@ -379,18 +409,16 @@ export default function IncidentReportScreen({ navigation, route }) {
         </View>
 
         {/* Action Buttons */}
-        <TouchableOpacity style={[styles.actionBtn, styles.btnRed]}>
-          <Ionicons name="share-social" size={18} color="#fff" />
-          <Text style={styles.btnText}>Share with Police</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]}>
-          <Ionicons name="checkmark" size={18} color="#fff" />
-          <Text style={styles.btnText}>Saved to Cloud ✅</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.actionBtn, styles.btnPurple]}>
-          <Ionicons name="download-outline" size={18} color="#fff" />
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.btnPurple]}
+          onPress={handleDownloadReport}
+          disabled={reportDownloading}
+        >
+          {reportDownloading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="download-outline" size={18} color="#fff" />
+          )}
           <Text style={styles.btnText}>Download Report</Text>
         </TouchableOpacity>
         

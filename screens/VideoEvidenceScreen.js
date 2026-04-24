@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   StatusBar,
@@ -14,6 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Video } from 'expo-av';
 import { useReport } from '../context/ReportContext';
 import { getIncidentReportById, getLatestIncidentReport, listIncidentReports } from '../services/reportStorage';
+import { useAuth } from '../context/AuthContext';
+import { videoAPI } from '../services/api';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 
 const formatTimestamp = (isoString) => {
   try {
@@ -31,6 +36,7 @@ export default function VideoEvidenceScreen({ navigation, route }) {
   const showAll = Boolean(route?.params?.showAll);
 
   const { latestReport } = useReport();
+  const { user } = useAuth();
 
   const [incidentId, setIncidentId] = useState(initialIncidentId);
   const [loading, setLoading] = useState(true);
@@ -39,12 +45,120 @@ export default function VideoEvidenceScreen({ navigation, route }) {
 
   const [playerVisible, setPlayerVisible] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState('');
+  const [busyVideoId, setBusyVideoId] = useState('');
+  const [playerDownloading, setPlayerDownloading] = useState(false);
+
+  const resolveUserId = () => String(user?.uid || user?.localId || user?.userId || '').trim();
+
+  const downloadVideoToDevice = useCallback(async (videoUrl, itemId = 'player') => {
+    const url = String(videoUrl || '').trim();
+    if (!url) return;
+
+    try {
+      setBusyVideoId(itemId);
+      if (itemId === 'player') {
+        setPlayerDownloading(true);
+      }
+
+      const perm = await MediaLibrary.requestPermissionsAsync(true, ['video']);
+      if (perm?.status !== 'granted') {
+        Alert.alert('Permission needed', 'Allow Photos/Media permission to save the video.');
+        return;
+      }
+
+      const localUri = `${FileSystem.cacheDirectory}abhaya-video-${Date.now()}.mp4`;
+      const downloaded = await FileSystem.downloadAsync(url, localUri);
+      await MediaLibrary.saveToLibraryAsync(downloaded.uri);
+
+      Alert.alert('Downloaded', 'Video downloaded successfully.');
+    } catch (e) {
+      Alert.alert('Download failed', e?.message || 'Could not download the video.');
+    } finally {
+      setBusyVideoId('');
+      if (itemId === 'player') {
+        setPlayerDownloading(false);
+      }
+    }
+  }, []);
+
+  const confirmDelete = useCallback(
+    (item) => {
+      Alert.alert('Delete video?', 'This will remove the video entry from your account.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const id = String(item?.id || '').trim();
+            if (!id) return;
+
+            const prev = videos;
+            setBusyVideoId(id);
+            setVideos((current) => current.filter((v) => v.id !== id));
+
+            try {
+              const result = await videoAPI.deleteVideo(id);
+              if (!result?.success) {
+                throw new Error(result?.error || 'Failed to delete.');
+              }
+            } catch (e) {
+              setVideos(prev);
+              Alert.alert('Delete failed', e?.message || 'Could not delete the video.');
+            } finally {
+              setBusyVideoId('');
+            }
+          },
+        },
+      ]);
+    },
+    [videos]
+  );
 
   const loadVideos = useCallback(async () => {
     setLoading(true);
     setError('');
+    let remoteFetchFailed = false;
 
     try {
+      const userId = resolveUserId();
+      if (userId) {
+        const result = await videoAPI.listUserVideos(userId);
+        if (result?.success && Array.isArray(result?.data)) {
+          const all = result.data
+            .map((row) => ({
+              id: String(row.id),
+              url: row.videoUrl,
+              incidentId: row.incidentId ? String(row.incidentId) : '',
+              label: row.incidentId
+                ? `Incident Video (${String(row.incidentId).slice(0, 8)}...)`
+                : 'Incident Evidence Video',
+              uploadedAt: row.createdAt || new Date().toISOString(),
+            }))
+            .filter((item) => item.url);
+
+          const filtered =
+            incidentId && !showAll ? all.filter((v) => v.incidentId === incidentId) : all;
+
+          setError('');
+          setVideos(filtered);
+          return;
+        } else if (result?.success === false && result?.error) {
+          remoteFetchFailed = true;
+        } else {
+          setError('');
+          setVideos([]);
+          return;
+        }
+      } else {
+        remoteFetchFailed = true;
+      }
+
+      if (!remoteFetchFailed) {
+        setError('');
+        setVideos([]);
+        return;
+      }
+
       if (showAll) {
         const all = await listIncidentReports();
         const reports = Array.isArray(all?.data) ? all.data : [];
@@ -81,6 +195,8 @@ export default function VideoEvidenceScreen({ navigation, route }) {
           setVideos([]);
           return;
         }
+
+        setError('');
 
         if (incidentId) {
           setVideos([
@@ -127,6 +243,7 @@ export default function VideoEvidenceScreen({ navigation, route }) {
           uploadedAt: item.timestamp || report.createdAt || new Date().toISOString(),
         }));
 
+      setError('');
       setVideos(videoItems);
     } catch (e) {
       setError(e?.message || 'Failed to load videos.');
@@ -134,7 +251,7 @@ export default function VideoEvidenceScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [incidentId, latestReport, initialVideoUrl, showAll]);
+  }, [incidentId, latestReport, initialVideoUrl, showAll, user]);
 
   useEffect(() => {
     if (initialVideoUrl) {
@@ -158,7 +275,7 @@ export default function VideoEvidenceScreen({ navigation, route }) {
 
   const headerSubtitle = useMemo(() => {
     if (initialVideoUrl && !incidentId) return 'Direct video link';
-    if (showAll) return 'All saved incidents';
+    if (showAll) return 'My saved videos';
     if (!incidentId) return 'Latest incident';
     return `Incident: ${incidentId.slice(0, 8)}…`;
   }, [incidentId, initialVideoUrl, showAll]);
@@ -184,7 +301,27 @@ export default function VideoEvidenceScreen({ navigation, route }) {
           {item.incidentId ? `  •  ${String(item.incidentId).slice(0, 8)}...` : ''}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          onPress={() => downloadVideoToDevice(item.url, item.id)}
+          style={styles.iconButton}
+          disabled={busyVideoId === item.id}
+        >
+          {busyVideoId === item.id ? (
+            <ActivityIndicator size="small" color="#7b57d1" />
+          ) : (
+            <Ionicons name="download-outline" size={18} color="#7b57d1" />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => confirmDelete(item)}
+          style={styles.iconButton}
+          disabled={busyVideoId === item.id}
+        >
+          <Ionicons name="trash-outline" size={18} color="#ea5455" />
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+      </View>
     </TouchableOpacity>
   );
 
@@ -237,7 +374,17 @@ export default function VideoEvidenceScreen({ navigation, route }) {
               <Ionicons name="close" size={24} color="#111" />
             </TouchableOpacity>
             <Text style={styles.playerTitle}>Playing</Text>
-            <View style={{ width: 24 }} />
+            <TouchableOpacity
+              onPress={() => downloadVideoToDevice(selectedVideoUrl, 'player')}
+              style={styles.playerClose}
+              disabled={playerDownloading}
+            >
+              {playerDownloading ? (
+                <ActivityIndicator size="small" color="#7b57d1" />
+              ) : (
+                <Ionicons name="download-outline" size={22} color="#7b57d1" />
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={styles.playerBody}>
@@ -305,6 +452,15 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   title: { fontSize: 14, fontWeight: '800', color: '#111' },
   meta: { marginTop: 6, fontSize: 12, color: '#8f8f96', fontWeight: '600' },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#f2ebff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
   centerText: { color: '#8f8f96', fontSize: 13, fontWeight: '600', textAlign: 'center' },
