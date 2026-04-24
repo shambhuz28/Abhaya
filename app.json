@@ -13,17 +13,41 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Abhaya uses your location to plan safe journeys and detect route deviations.",
+        "NSCameraUsageDescription": "Abhaya uses the camera to scan and save suspicious vehicles without visible number plates.",
+        "NSPhotoLibraryUsageDescription": "Abhaya uses your photo library so you can upload vehicle images and save them as evidence."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Abhaya uses your location to plan safe journeys and detect route deviations."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Abhaya uses your photo library so you can upload vehicle images and save them as evidence.",
+          "cameraPermission": "Abhaya uses the camera to scan and save suspicious vehicles without visible number plates."
+        }
+      ]
+    ]
   }
 }

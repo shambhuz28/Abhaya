@@ -7,9 +7,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
 import HomeScreen from './screens/HomeScreen';
+import JourneyScreen from './screens/JourneyScreen';
 import EmergencyContactsScreen from './screens/EmergencyContactsScreen';
 import IncidentReportScreen from './screens/IncidentReportScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import JourneyHistoryScreen from './screens/JourneyHistoryScreen';
+import VehicleScanScreen from './screens/VehicleScanScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,9 +38,13 @@ function AppNavigator() {
       {isAuthenticated ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Journey" component={JourneyScreen} />
           <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
           <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="JourneyHistory" component={JourneyHistoryScreen} />
+          <Stack.Screen name="VehicleScan" component={VehicleScanScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
         </>
       ) : (
         <>

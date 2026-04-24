@@ -1,20 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-
-// ⚠️ Replace this IP with YOUR computer's local IP (run: hostname -I)
-// This ensures physical devices on the same WiFi can reach the backend.
-const LOCAL_IP = '10.20.62.129';
-
-const getBaseUrl = () => {
-  // Web browser can use localhost directly
-  if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api';
-  }
-  // Mobile (physical device or emulator) — use LAN IP
-  return `http://${LOCAL_IP}:5000/api`;
-};
-
-const BASE_URL = getBaseUrl();
+import { BASE_URL, backendUnavailableMessage } from './backendConfig';
 
 // Storage keys
 const TOKEN_KEY = '@safeguard_token';
@@ -35,7 +20,7 @@ const apiRequest = async (endpoint, options = {}) => {
   if (options.authenticated !== false) {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
   }
 
@@ -54,7 +39,7 @@ const apiRequest = async (endpoint, options = {}) => {
       if (refreshed) {
         // Retry the original request with new token
         const newToken = await AsyncStorage.getItem(TOKEN_KEY);
-        headers['Authorization'] = `Bearer ${newToken}`;
+        headers.Authorization = `Bearer ${newToken}`;
         const retryResponse = await fetch(url, {
           ...options,
           headers,
@@ -66,10 +51,10 @@ const apiRequest = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error.message);
+    console.error(`API Error [${endpoint}] (${url}):`, error.message);
     return {
       success: false,
-      error: 'Network error. Please check your connection.',
+      error: backendUnavailableMessage,
     };
   }
 };
@@ -81,11 +66,14 @@ const storeAuthData = async (data) => {
   await AsyncStorage.multiSet([
     [TOKEN_KEY, data.idToken],
     [REFRESH_KEY, data.refreshToken],
-    [USER_KEY, JSON.stringify({
-      uid: data.uid,
-      email: data.email,
-      displayName: data.displayName,
-    })],
+    [
+      USER_KEY,
+      JSON.stringify({
+        uid: data.uid,
+        email: data.email,
+        displayName: data.displayName,
+      }),
+    ],
   ]);
 };
 
@@ -132,8 +120,6 @@ const refreshToken = async () => {
     return false;
   }
 };
-
-// ─── Auth API Methods ────────────────────────────────────────
 
 const authAPI = {
   /**
