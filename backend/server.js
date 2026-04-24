@@ -41,12 +41,14 @@ const historyRoutes = require('./routes/history');
 const vehicleObservationRoutes = require('./routes/vehicleObservations');
 const incidentRoutes = require('./routes/incidents');
 const emailRoutes = require('./routes/email');
+const audioRoutes = require('./routes/audio');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/journey', journeyRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/vehicle-observations', vehicleObservationRoutes);
 app.use('/api/incidents', incidentRoutes);
+app.use('/api/audio', audioRoutes);
 
 // Supports both:
 // - POST /send-email
@@ -104,6 +106,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('GET    /api/journey/route');
   console.log('POST   /api/journey/check-deviation');
   console.log('POST   /api/journey/sos');
+  console.log('POST   /api/audio/transcribe');
   console.log('GET    /api/history');
   console.log('POST   /api/history');
   console.log('POST   /api/history/:historyId/events');
@@ -117,4 +120,3 @@ app.listen(PORT, '0.0.0.0', () => {
     logFilePath: logger.logFilePath,
   });
 });
-

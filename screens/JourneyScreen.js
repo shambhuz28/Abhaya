@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import journeyAPI from '../services/journey';
 import vehicleObservationAPI from '../services/vehicleObservations';
 import crimeZones from '../kolhapur_crime_zones.json';
+import AudioAnalysisService from '../services/AudioAnalysisService';
 
 const { width } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ const ZONE_ALERT_COOLDOWN_MS = 45 * 1000;
 const SAFE_REASON_SUPPRESSION_MS = 10 * 60 * 1000;
 const SAFE_REASON_DISTANCE_ESCALATION_METRES = 500;
 const NEARBY_CRIME_ZONE_RADIUS_METRES = 5_000;
+const DANGER_ZONE_AUDIO_RADIUS_METRES = 1_000;
 const MAP_CRIME_ZONE_RADIUS_METRES = 100;
 const MONITORED_CRIME_RISKS = new Set(['high', 'medium']);
 
@@ -215,7 +217,9 @@ export default function JourneyScreen({ navigation }) {
   const isTestLocationActiveRef = useRef(false);
   const safetyPromptRef = useRef(null);
   const activeHistoryIdRef = useRef(null);
+  const audioMonitoringSuppressedRef = useRef(false);
   const lastAnnouncedZoneRef = useRef({ id: null, at: 0 });
+  const lastAudioZoneRef = useRef({ id: null, at: 0 });
   const lastSafeDeviationRef = useRef({
     classification: null,
     reason: '',
@@ -266,6 +270,9 @@ export default function JourneyScreen({ navigation }) {
   const [isTestLocationActive, setIsTestLocationActive] = useState(false);
   const [activeCrimeZone, setActiveCrimeZone] = useState(null);
   const [nearbyCrimeZones, setNearbyCrimeZones] = useState([]);
+  const [isAudioAnalyzing, setIsAudioAnalyzing] = useState(false);
+  const [audioDebug, setAudioDebug] = useState(AudioAnalysisService.getDebugState());
+  const [testPanicText, setTestPanicText] = useState('');
 
   const routeCoordinates = useMemo(
     () => route.map(toMapCoordinate),
@@ -316,6 +323,19 @@ export default function JourneyScreen({ navigation }) {
   useEffect(() => {
     activeHistoryIdRef.current = activeHistoryId;
   }, [activeHistoryId]);
+
+  useEffect(() => {
+    const unsubscribeStatus = AudioAnalysisService.addStatusListener((status) => {
+      setIsAudioAnalyzing(status);
+    });
+    const unsubscribeDebug = AudioAnalysisService.addDebugListener((debugState) => {
+      setAudioDebug(debugState);
+    });
+    return () => {
+      unsubscribeStatus();
+      unsubscribeDebug();
+    };
+  }, []);
 
   useEffect(() => {
     isTestLocationActiveRef.current = isTestLocationActive;
@@ -404,6 +424,8 @@ export default function JourneyScreen({ navigation }) {
     setIsTracking(false);
     stationaryAnchorRef.current = null;
     resetDeviationState();
+    AudioAnalysisService.stopAnalysis();
+    audioMonitoringSuppressedRef.current = false;
   }, [resetDeviationState, stopDeviationChecks, stopStationaryChecks]);
 
   const clearSavedJourney = useCallback(async () => {
@@ -427,6 +449,8 @@ export default function JourneyScreen({ navigation }) {
 
     stopDeviationChecks();
     stopStationaryChecks();
+    AudioAnalysisService.stopAnalysis();
+    audioMonitoringSuppressedRef.current = false;
     setDestinationQuery('');
     setSearchResults([]);
     setSelectedDestination(null);
@@ -746,6 +770,9 @@ export default function JourneyScreen({ navigation }) {
 
   const triggerSOS = useCallback(
     async (reason, options = {}) => {
+      console.log('SOS', reason);
+      audioMonitoringSuppressedRef.current = true;
+      await AudioAnalysisService.stopAnalysis();
       const position = latestPositionRef.current;
 
       if (!position) {
@@ -996,6 +1023,7 @@ export default function JourneyScreen({ navigation }) {
   useEffect(() => {
     if (!activeCrimeZone) {
       lastAnnouncedZoneRef.current = { id: null, at: 0 };
+      lastAudioZoneRef.current = { id: null, at: 0 };
       return;
     }
 
@@ -1004,29 +1032,64 @@ export default function JourneyScreen({ navigation }) {
       lastAnnouncedZoneRef.current.id !== activeCrimeZone.id ||
       now - lastAnnouncedZoneRef.current.at >= ZONE_ALERT_COOLDOWN_MS;
 
-    if (!shouldAnnounce) {
+    if (shouldAnnounce) {
+      lastAnnouncedZoneRef.current = {
+        id: activeCrimeZone.id,
+        at: now,
+      };
+
+      const warningMessage = `Safety alert. ${activeCrimeZone.name} is a ${getCrimeZoneStyle(activeCrimeZone.risk).label.toLowerCase()} area within 5 kilometers. Stay alert.`;
+      AccessibilityInfo.announceForAccessibility(warningMessage);
+
+      addJourneyLog({
+        type: 'crime_zone_alert',
+        message: `Nearby ${activeCrimeZone.risk} risk zone within 5 km: ${activeCrimeZone.name}`,
+        metadata: {
+          zoneId: activeCrimeZone.id,
+          zoneName: activeCrimeZone.name,
+          risk: activeCrimeZone.risk,
+          radius: activeCrimeZone.effectiveRadius,
+        },
+      });
+    }
+
+    const shouldStartAudio =
+      isTracking &&
+      !audioMonitoringSuppressedRef.current &&
+      Number.isFinite(activeCrimeZone.distance) &&
+      activeCrimeZone.distance <= DANGER_ZONE_AUDIO_RADIUS_METRES;
+
+    if (!shouldStartAudio) {
       return;
     }
 
-    lastAnnouncedZoneRef.current = {
-      id: activeCrimeZone.id,
-      at: now,
-    };
-
-    const warningMessage = `Safety alert. ${activeCrimeZone.name} is a ${getCrimeZoneStyle(activeCrimeZone.risk).label.toLowerCase()} area within 5 kilometers. Stay alert.`;
-    AccessibilityInfo.announceForAccessibility(warningMessage);
-
-    addJourneyLog({
-      type: 'crime_zone_alert',
-      message: `Nearby ${activeCrimeZone.risk} risk zone within 5 km: ${activeCrimeZone.name}`,
-      metadata: {
-        zoneId: activeCrimeZone.id,
-        zoneName: activeCrimeZone.name,
-        risk: activeCrimeZone.risk,
-        radius: activeCrimeZone.effectiveRadius,
-      },
+    AudioAnalysisService.startAnalysis((panicReason) => {
+      triggerSOS(panicReason);
     });
-  }, [activeCrimeZone, addJourneyLog]);
+
+    const shouldLogAudioStart =
+      lastAudioZoneRef.current.id !== activeCrimeZone.id ||
+      now - lastAudioZoneRef.current.at >= ZONE_ALERT_COOLDOWN_MS;
+
+    if (shouldLogAudioStart) {
+      lastAudioZoneRef.current = {
+        id: activeCrimeZone.id,
+        at: now,
+      };
+
+      addJourneyLog({
+        type: 'crime_zone_audio_started',
+        message: `Audio analysis started near ${activeCrimeZone.risk} risk zone within 1 km: ${activeCrimeZone.name}`,
+        metadata: {
+          zoneId: activeCrimeZone.id,
+          zoneName: activeCrimeZone.name,
+          risk: activeCrimeZone.risk,
+          distance: activeCrimeZone.distance,
+          radius: DANGER_ZONE_AUDIO_RADIUS_METRES,
+        },
+      });
+    }
+  }, [activeCrimeZone, addJourneyLog, isTracking, triggerSOS]);
 
   useEffect(() => {
     dismissSafetyPromptRef.current = dismissSafetyPrompt;
@@ -1112,15 +1175,18 @@ export default function JourneyScreen({ navigation }) {
                 result.distance >=
                   suppression.baselineDistance + SAFE_REASON_DISTANCE_ESCALATION_METRES;
 
-              if (!stationaryAlertOpenRef.current && (!stillSuppressed || distanceEscalated)) {
-                showSafetyPrompt({
-                  type: 'deviation',
-                  title: 'Are you safe?',
-                  message: `You are ${result.distance} metres away from the selected route. Confirm you are safe or send SOS.`,
+              if (
+                !audioMonitoringSuppressedRef.current &&
+                !stationaryAlertOpenRef.current &&
+                (!stillSuppressed || distanceEscalated)
+              ) {
+                AudioAnalysisService.startAnalysis((panicReason) => {
+                  triggerSOS(panicReason);
                 });
+
                 addJourneyLog({
                   type: 'deviation_detected',
-                  message: `Deviation detected: ${result.distance} metres from route`,
+                  message: `Deviation detected: ${result.distance} metres from route. Audio analysis started.`,
                   metadata: {
                     distance: result.distance,
                     threshold: result.threshold,
@@ -1147,7 +1213,7 @@ export default function JourneyScreen({ navigation }) {
         setIsCheckingDeviation(false);
       }
     },
-    [addJourneyLog, showSafetyPrompt]
+    [addJourneyLog, triggerSOS]
   );
 
   const startDeviationChecks = useCallback(() => {
@@ -1314,6 +1380,7 @@ export default function JourneyScreen({ navigation }) {
       setSelectedRouteIndex(selectedIndex);
       setSearchResults([]);
       setIsTracking(true);
+      audioMonitoringSuppressedRef.current = false;
       stationaryAnchorRef.current = null;
       resetDeviationState();
 
@@ -1916,6 +1983,57 @@ export default function JourneyScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Live Journey</Text>
 
+          {(isAudioAnalyzing || audioDebug.lastTranscript || audioDebug.lastPanicReason) && (
+            <View style={styles.audioAnalysisCard}>
+              <Ionicons name="mic" size={24} color="#dc2626" />
+              <View style={styles.audioAnalysisTextWrap}>
+                <Text style={styles.audioAnalysisTitle}>
+                  Audio Analysis {isAudioAnalyzing ? 'Active' : 'Stopped'}
+                </Text>
+                <Text style={styles.audioAnalysisSubtitle}>
+                  Voice level: {audioDebug.latestMetering === null ? 'waiting' : audioDebug.latestMetering}
+                  {audioDebug.averageMetering === null ? '' : `, avg ${audioDebug.averageMetering}`}
+                </Text>
+                <Text style={styles.audioAnalysisDebugLine}>
+                  Received: {audioDebug.lastTranscript || (isAudioAnalyzing
+                    ? 'Waiting for backend transcript after current audio clip'
+                    : 'No speech text received yet')}
+                </Text>
+                <Text style={styles.audioAnalysisDebugLine}>
+                  Matched: {audioDebug.matchedKeywords.length ? audioDebug.matchedKeywords.join(', ') : 'None'}
+                </Text>
+                <Text style={styles.audioAnalysisDebugLine}>
+                  Status: {audioDebug.lastPanicReason || audioDebug.lastEvent}
+                </Text>
+                {isAudioAnalyzing && (
+                  <View style={styles.audioTestRow}>
+                    <TextInput
+                      value={testPanicText}
+                      onChangeText={setTestPanicText}
+                      placeholder="Test transcript"
+                      placeholderTextColor="#f87171"
+                      style={styles.audioTestInput}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.audioTestButton,
+                        !testPanicText.trim() && styles.audioTestButtonDisabled,
+                      ]}
+                      disabled={!testPanicText.trim()}
+                      onPress={() => {
+                        AudioAnalysisService.simulateTranscript(testPanicText);
+                        setTestPanicText('');
+                      }}
+                    >
+                      <Text style={styles.audioTestButtonText}>Check</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
           {activeCrimeZone ? (
             <View
               style={[
@@ -2462,6 +2580,72 @@ const styles = StyleSheet.create({
     color: '#8f8f96',
     fontSize: 13,
     lineHeight: 19,
+  },
+  audioAnalysisCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fef2f2',
+    borderColor: '#fca5a5',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 14,
+  },
+  audioAnalysisTextWrap: {
+    flex: 1,
+  },
+  audioAnalysisTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#991b1b',
+  },
+  audioAnalysisSubtitle: {
+    fontSize: 12,
+    color: '#dc2626',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  audioAnalysisDebugLine: {
+    fontSize: 12,
+    color: '#7f1d1d',
+    marginTop: 5,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+  audioTestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
+  audioTestInput: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    color: '#7f1d1d',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  audioTestButton: {
+    minHeight: 40,
+    borderRadius: 10,
+    backgroundColor: '#dc2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  audioTestButtonDisabled: {
+    backgroundColor: '#fecaca',
+  },
+  audioTestButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
   },
   testCard: {
     backgroundColor: '#fff8ed',

@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useReport } from '../context/ReportContext';
 import { incidentAPI } from '../services/api';
 import { saveIncidentReport } from '../services/reportStorage';
+import AudioAnalysisService from '../services/AudioAnalysisService';
 
 const getEmailEndpoint = () => {
   const rawBase = String(
@@ -238,6 +239,10 @@ export default function IncidentReportScreen({ navigation, route }) {
         };
 
         const emailResult = await sendEmergencyEmailViaBackend(updatedReport);
+        if (emailResult?.success) {
+          await AudioAnalysisService.stopAnalysis();
+        }
+
         const finalReport = {
           ...updatedReport,
           notification: { sent: Boolean(emailResult?.success) },

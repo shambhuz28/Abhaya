@@ -51,7 +51,9 @@
           "photosPermission": "Abhaya uses your photo library so you can upload vehicle images and save them as evidence.",
           "cameraPermission": "Abhaya uses the camera to scan and save suspicious vehicles without visible number plates."
         }
-      ]
+      ],
+      "expo-audio",
+      "expo-video"
     ]
   }
 }
