@@ -3,7 +3,7 @@ import { NativeModules, Platform } from 'react-native';
 
 // ⚠️ Replace this IP with YOUR computer's local IP (run: hostname -I)
 // This ensures physical devices on the same WiFi can reach the backend.
-const LOCAL_IP = '10.14.2.209';
+const LOCAL_IP = '10.14.3.122';
 
 const extractHostFromScriptUrl = (scriptURL) => {
   if (!scriptURL || typeof scriptURL !== 'string') return null;
